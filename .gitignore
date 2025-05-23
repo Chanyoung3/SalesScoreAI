@@ -1,0 +1,18 @@
+# React (frontend)
+frontend/node_modules/
+frontend/.env
+
+# Spring Boot (backend)
+backend/target/
+backend/.idea/
+backend/.env
+
+# Python (ai-server)
+ai-server/__pycache__/
+ai-server/venv/
+ai-server/.venv/
+ai-server/.env
+
+# OS
+.DS_Store
+Thumbs.db
