@@ -15,7 +15,7 @@ function App() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          FrontEnd
+          FrontEnd - chan?
         </a>
       </header>
     </div>
