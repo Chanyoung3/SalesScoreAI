@@ -22,6 +22,7 @@ function Login() {
       .post(process.env.REACT_APP_API_URL + "/auth/login", user, {
         headers: { "Content-Type": "application/json" },
       })
+      /*
       .then((res) => {
         const jwtToken = res.headers.authorization;
         if (jwtToken) {
@@ -29,6 +30,7 @@ function Login() {
           setAuth(true);
         }
       })
+        */
       .catch(() => {
         setOpen(true);
       });
