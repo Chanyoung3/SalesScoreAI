@@ -33,6 +33,15 @@ dependencies {
     // SQLite JDBC 드라이버
     implementation 'org.xerial:sqlite-jdbc:3.45.1.0' // 최신 버전 확인
 
+    // https://mvnrepository.com/artifact/com.github.gwenn/sqlite-dialect
+    implementation("com.github.gwenn:sqlite-dialect:0.2.0")
+
+    // https://mvnrepository.com/artifact/org.hibernate/hibernate-core
+    implementation("org.hibernate:hibernate-core:7.0.0.Final")
+
+    // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-community-dialects
+    implementation("org.hibernate.orm:hibernate-community-dialects:6.6.16.Final")
+
     // Lombok (옵션: 보일러플레이트 코드 줄이기)
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'

@@ -1,5 +1,5 @@
 -- counselors 테이블 생성 (상담사 정보 저장)
-CREATE TABLE counselors(
+CREATE TABLE IF NOT EXISTS counselors(
     id INTEGER PRIMARY KEY AUTOINCREMENT, -- 상담사 고유 ID (자동 증가)
     username VARCHAR(50) NOT NULL UNIQUE,       -- 사용자명 (로그인 시 사용, 중복 불가)
     password VARCHAR(50) NOT NULL,              -- 비밀번호 (해시된 형태로 저장)
@@ -9,7 +9,7 @@ CREATE TABLE counselors(
 );
 
 -- consultations 테이블 생성 (상담 내용 및 결과 저장)
-CREATE TABLE consultations (
+CREATE TABLE IF NOT EXISTS consultations (
     id INTEGER PRIMARY KEY AUTOINCREMENT, -- 상담 고유 ID (자동 증가)
     counselor_id INTEGER NOT NULL,        -- 상담사 ID (counselors 테이블의 id와 연결)
     consultation_date DATE NOT NULL,      -- 상담 일시 (YYYY-MM-DD HH:MM:SS 형식)
