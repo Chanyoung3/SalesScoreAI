@@ -4,7 +4,7 @@ import axios from 'axios';
 
 function Login() {
   const [user, setUser] = useState({
-    userid: "",
+    username: "",
     password: "",
   });
   const [isAuthenticated, setAuth] = useState(false);
@@ -56,7 +56,7 @@ function Login() {
             <input
               type="text"
               name="userid"
-              value={user.userid}
+              value={user.username}
               onChange={handleChange}
             />
           </div>
