@@ -4,7 +4,9 @@ import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.RegisterRequest;
 import com.example.backend.model.Counselor;
 import com.example.backend.service.CounselorService;
+import com.example.backend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired; // 의존성 자동 주입
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus; // HTTP 상태 코드
 import org.springframework.http.ResponseEntity; // HTTP 응답 객체
 import org.springframework.web.bind.annotation.*; // REST 컨트롤러 관련 어노테이션 임포트
@@ -13,11 +15,13 @@ import org.springframework.web.bind.annotation.*; // REST 컨트롤러 관련 �
 @RequestMapping("/api/auth") // 이 컨트롤러의 모든 API 엔드포인트는 "/api/auth"로 시작
 public class AuthController {
 
-    private final CounselorService counselorService; // 상담사 관련 비즈니스 로직을 처리하는 서비스
+    private final CounselorService counselorService;
+    private final JwtUtil jwtUtil; // JwtUtil 주입을 위한 필드 추가
 
-    @Autowired
-    public AuthController(CounselorService counselorService) {
+    @Autowired // 생성자 주입
+    public AuthController(CounselorService counselorService, JwtUtil jwtUtil) {
         this.counselorService = counselorService;
+        this.jwtUtil = jwtUtil; // JwtUtil 주입
     }
 
     // 회원가입 API 엔드포인트 (POST /api/auth/register)
@@ -44,10 +48,18 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         return counselorService.login(request.getUsername(), request.getPassword())
-                // 로그인 성공 시: HTTP 200 OK 상태 코드와 함께 성공 메시지 및 상담사 ID를 반환
-                // (실제 서비스에서는 JWT 토큰 등을 반환해야 합니다.)
-                .<ResponseEntity<?>>map(counselor -> ResponseEntity.ok().body("로그인 성공! 상담사 ID: " + counselor.getId()))
-                // 로그인 실패 시: HTTP 401 Unauthorized 상태 코드와 함께 인증 실패 메시지를 반환
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 사용자명 또는 비밀번호입니다."));
+                .map(counselor -> {
+                    // 로그인 성공 시 JWT 토큰 생성
+                    String token = jwtUtil.generateToken(counselor.getUsername(), counselor.getRole(), counselor.getId());
+
+                    // 응답 헤더에 Authorization: Bearer [JWT_TOKEN] 형태로 토큰 추가
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+                    headers.add("Access-Control-Expose-Headers", "Authorization"); // 프론트엔드가 Authorization 헤더를 읽을 수 있도록 허용
+
+                    // 성공 응답 (HTTP 200 OK)
+                    return new ResponseEntity<>("로그인 성공!", headers, HttpStatus.OK);
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 아이디 또는 비밀번호입니다."));
     }
 }
