@@ -8,4 +8,3 @@ function Consultations({ logOut }) {
   }
   
   export default Consultations;
-  
