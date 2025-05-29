@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Consultations from "./consultations";
+import '../css/Login.css';
 import axios from 'axios';
 
 function Login() {
@@ -17,12 +18,12 @@ function Login() {
   const handleLogin = (e) => {
     e.preventDefault();
     // 서버 연결
-    // /*
+     /*
     axios
       .post(process.env.REACT_APP_API_URL + "/auth/login", user, {
         headers: { "Content-Type": "application/json" },
       })
-      /*
+      
       .then((res) => {
         const jwtToken = res.headers.authorization;
         if (jwtToken) {
@@ -30,14 +31,14 @@ function Login() {
           setAuth(true);
         }
       })
-        */
+        
       .catch(() => {
         setOpen(true);
       });
-     // */
+      */
 
     console.log("로그인 시도:", user);
-    //setAuth(true);
+    setAuth(true);
   };
 
   const handleLogout = () => {
