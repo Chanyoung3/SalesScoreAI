@@ -4,6 +4,7 @@ import Container from "@mui/material/Container";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Login from './components/Login';
 import Consultations from './components/consultations';
+import Evaluation from './components/evaluation';
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,10 @@ function App() {
             <Route
               path="/consultations"
               element={isAuthenticated ? <Consultations /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/evaluation"
+              element={<Evaluation />}
             />
           </Routes>
         </BrowserRouter>
