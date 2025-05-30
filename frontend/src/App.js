@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Login from './components/Login';
 import Consultations from './components/consultations';
 import Evaluation from './components/evaluation';
+import Detail from './components/detail';
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,10 @@ function App() {
             <Route
               path="/evaluation"
               element={<Evaluation />}
+            />
+            <Route
+              path="/detail"
+              element={<Detail />}
             />
           </Routes>
         </BrowserRouter>
