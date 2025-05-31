@@ -1,23 +1,48 @@
-import React from "react";
-import Header from "./components/Header";
-import Sidebar from "./components/Sidebar";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Container from "@mui/material/Container";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Login from './components/Login';
+import Consultations from './components/consultations';
+import Evaluation from './components/evaluation';
+import Detail from './components/detail';
+import Upload from './components/upload'
+
+const queryClient = new QueryClient();
 
 function App() {
-  return (
-    <div className="h-screen flex flex-col">
-      {/* 헤더 */}
-      <Header />
+  const isAuthenticated = !!sessionStorage.getItem("jwt");
 
-      {/* 사이드바 + 본문 */}
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 p-6 bg-gray-100">
-          <h1 className="text-2xl font-bold mb-4">본문 영역</h1>
-          <p>여기에 콜 분석 결과, 그래프, 세부내용 등을 표시합니다.</p>
-        </main>
-      </div>
-    </div>
+  return (
+    <Container maxWidth="xl">
+      <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+          <Routes>
+            <Route
+              path="/"
+              element={isAuthenticated ? <Navigate to="/consultations" /> : <Login />}
+            />
+            <Route
+              path="/consultations"
+              element={isAuthenticated ? <Consultations /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/evaluation"
+              element={<Evaluation />}
+            />
+            <Route
+              path="/detail"
+              element={<Detail />}
+            />
+            <Route
+              path="/upload"
+              element={<Upload />}
+            />
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </Container>
   );
 }
 
-export default App; // ✅ 반드시 있어야 함
+export default App;
