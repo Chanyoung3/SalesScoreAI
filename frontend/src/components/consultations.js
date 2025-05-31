@@ -7,6 +7,27 @@ import ko from 'date-fns/locale/ko';
 import { useState } from "react";
 import '../App.css';
 
+function Header() {
+  return (
+    <header className="bg-white shadow h-16 flex items-center px-6">
+      <h1 className="text-xl font-bold">헤더 (19팀)</h1>
+    </header>
+  );
+}
+
+function Sidebar() {
+  return (
+    <aside className="w-64 bg-blue-900 text-white p-4">
+      <h2 className="text-xl font-bold mb-4">사이드바</h2>
+      <ul className="space-y-2">
+        <li className="hover:bg-blue-800 p-2 rounded">메뉴1</li>
+        <li className="hover:bg-blue-800 p-2 rounded">메뉴2</li>
+        <li className="hover:bg-blue-800 p-2 rounded">메뉴3</li>
+      </ul>
+    </aside>
+  );
+}
+
 function Consultations({ logOut }) {
   const [searchText, setSearchText] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
@@ -37,7 +58,10 @@ function Consultations({ logOut }) {
   ];
 
   return (
+
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
+          <Header />
+          <Sidebar />
       <Box border={1} borderColor="#ccc" padding={2} marginBottom={2}>
         <Grid container spacing={2} alignItems="center" justifyContent="center">
           <Grid item xs={12} sm={6} md={4}>
