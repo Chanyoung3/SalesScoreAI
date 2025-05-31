@@ -6,6 +6,7 @@ import Login from './components/Login';
 import Consultations from './components/consultations';
 import Evaluation from './components/evaluation';
 import Detail from './components/detail';
+import Upload from './components/upload'
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,10 @@ function App() {
             <Route
               path="/detail"
               element={<Detail />}
+            />
+            <Route
+              path="/upload"
+              element={<Upload />}
             />
           </Routes>
         </BrowserRouter>
