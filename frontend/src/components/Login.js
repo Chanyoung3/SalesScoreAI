@@ -39,6 +39,7 @@ function Login() {
 
     console.log("로그인 시도:", user);
     setAuth(true);
+
   };
 
   const handleLogout = () => {
@@ -46,7 +47,7 @@ function Login() {
   };
 
   if (isAuthenticated) {
-    return <Consultations logOut={handleLogout} />;
+    return <Consultations logOut={handleLogout} user={user} />;
   } else {
     return (
       <div className="login-container">
@@ -56,7 +57,7 @@ function Login() {
           <label>아이디</label>
           <input
             type="text"
-            name="userid"
+            name="username"
             value={user.userid}
             onChange={handleChange}
           />

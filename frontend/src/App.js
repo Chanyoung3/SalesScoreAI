@@ -28,15 +28,15 @@ function App() {
             />
             <Route
               path="/evaluation"
-              element={<Evaluation />}
+              element={isAuthenticated ? <Evaluation /> : <Navigate to="/" />}
             />
             <Route
               path="/detail"
-              element={<Detail />}
+              element={isAuthenticated ? <Detail /> : <Navigate to="/" />}
             />
             <Route
               path="/upload"
-              element={<Upload />}
+              element={isAuthenticated ? <Upload /> : <Navigate to="/" />}
             />
           </Routes>
         </BrowserRouter>
