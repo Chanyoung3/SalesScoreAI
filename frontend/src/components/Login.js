@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import Consultations from "./consultations";
 import "../css/Login.css";
 import axios from 'axios';
@@ -10,6 +11,7 @@ function Login() {
   });
   const [isAuthenticated, setAuth] = useState(false);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
@@ -17,13 +19,11 @@ function Login() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // 서버 연결hh
-     /*
+
     axios
       .post(process.env.REACT_APP_API_URL + "/auth/login", user, {
         headers: { "Content-Type": "application/json" },
       })
-      /*
       .then((res) => {
         const jwtToken = res.headers.authorization;
         if (jwtToken) {
@@ -35,15 +35,14 @@ function Login() {
       .catch(() => {
         setOpen(true);
       });
-      */
 
     console.log("로그인 시도:", user);
-    setAuth(true);
-
   };
 
   const handleLogout = () => {
+    sessionStorage.removeItem("jwt");
     setAuth(false);
+    navigate("/");
   };
 
   if (isAuthenticated) {
@@ -58,7 +57,7 @@ function Login() {
           <input
             type="text"
             name="username"
-            value={user.userid}
+            value={user.username}
             onChange={handleChange}
           />
         </div>
