@@ -1,39 +1,22 @@
-/* === Tailwind 기본 설정 === */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* === 기존 브라우저 기본 리셋 및 폰트 스타일 === */
-body {
+/* 기존에 있던 전역 스타일도 함께 병합합니다. */
+html, body, #root {
+  height: 100%;
   margin: 0;
+  padding: 0;
+}
+
+body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
-body, html {
-  height: 100%;
-  margin: 0;
-}
-
-#root { 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
-
-.login-container {
-  padding: 40px;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  background-color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }

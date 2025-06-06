@@ -1,9 +1,9 @@
-import React from "react";
+import React from 'react';
 
 function Header() {
   return (
-    <header className="bg-white shadow h-16 flex items-center px-6">
-      <h1 className="text-xl font-bold">헤더 (19팀)</h1>
+    <header className="w-full bg-white shadow p-4 border-b">
+      <h1 className="text-xl font-bold">세일즈 스코어링</h1>
     </header>
   );
 }

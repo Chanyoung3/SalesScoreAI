@@ -1,47 +1,37 @@
+// src/App.js
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Container from "@mui/material/Container";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Login from './components/Login';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import Sidebar from './components/Sidebar';
 import Consultations from './components/consultations';
 import Evaluation from './components/evaluation';
+import Upload from './components/upload';
 import Detail from './components/detail';
-import Upload from './components/upload'
-
-const queryClient = new QueryClient();
+import './App.css';
 
 function App() {
-  const isAuthenticated = !!sessionStorage.getItem("jwt");
+  const logOut = () => {
+    sessionStorage.removeItem("jwt");
+    window.location.href = "/";
+  };
 
   return (
-    <Container maxWidth="xl">
-      <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-          <Routes>
-            <Route
-              path="/"
-              element={isAuthenticated ? <Navigate to="/consultations" /> : <Login />}
-            />
-            <Route
-              path="/consultations"
-              element={isAuthenticated ? <Consultations /> : <Navigate to="/" />}
-            />
-            <Route
-              path="/evaluation"
-              element={<Evaluation />}
-            />
-            <Route
-              path="/detail"
-              element={<Detail />}
-            />
-            <Route
-              path="/upload"
-              element={<Upload />}
-            />
-          </Routes>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </Container>
+    <BrowserRouter>
+      <div className="flex flex-col h-screen">
+        <Header />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar />
+          <div className="flex-1 overflow-y-auto">
+            <Routes>
+              <Route path="/" element={<Consultations logOut={logOut} />} />
+              <Route path="/evaluation" element={<Evaluation />} />
+              <Route path="/upload" element={<Upload />} />
+              <Route path="/detail/:id" element={<Detail />} />
+            </Routes>
+          </div>
+        </div>
+      </div>
+    </BrowserRouter>
   );
 }
 
