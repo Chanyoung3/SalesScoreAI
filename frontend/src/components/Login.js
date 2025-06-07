@@ -4,7 +4,7 @@ import Consultations from "./consultations";
 import "../css/Login.css";
 import axios from 'axios';
 
-function Login() {
+function Login({ onLogin }) {
   const [user, setUser] = useState({
     username: "",
     password: "",
@@ -27,8 +27,8 @@ function Login() {
       .then((res) => {
         const jwtToken = res.headers.authorization;
         if (jwtToken) {
-          sessionStorage.setItem("jwt", jwtToken);
-          setAuth(true);
+          onLogin(jwtToken);     // ✅ App의 상태 갱신
+          navigate("/consultations");
         }
       })
         
@@ -71,8 +71,10 @@ function Login() {
           />
         </div>
         <br />
-        <button className="loginbutton" type="submit">로그인</button>
+        <button className="button" type="submit">로그인</button>
       </form>
+      <br />
+      <button className="signbutton">회원가입</button>
       {open && (
         <p style={{ color: 'red' }}>
           로그인 실패. 아이디와 비밀번호를 확인하세요.

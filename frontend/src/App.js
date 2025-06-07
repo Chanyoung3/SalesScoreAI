@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Container from "@mui/material/Container";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -11,33 +11,51 @@ import Upload from './components/upload'
 const queryClient = new QueryClient();
 
 function App() {
-  const isAuthenticated = !!sessionStorage.getItem("jwt");
+
+  const [isAuthenticated, setIsAuthenticated] = useState(!!sessionStorage.getItem("jwt"));
+
+  const handleLogin = (jwt) => {
+    sessionStorage.setItem("jwt", jwt);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("jwt");
+    setIsAuthenticated(false);
+  };
 
   return (
     <Container maxWidth="xl">
       <QueryClientProvider client={queryClient}>
       <BrowserRouter>
           <Routes>
-            <Route
+             <Route
               path="/"
-              element={isAuthenticated ? <Navigate to="/consultations" /> : <Login />}
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/consultations" />
+                ) : (
+                  <Login onLogin={handleLogin} />
+                )
+              }
             />
             <Route
               path="/consultations"
-              element={isAuthenticated ? <Consultations /> : <Navigate to="/" />}
+              element={isAuthenticated ? <Consultations logOut={handleLogout}/> : <Navigate to="/" />}
             />
             <Route
               path="/evaluation"
-              element={isAuthenticated ? <Evaluation /> : <Navigate to="/" />}
+              element={isAuthenticated ? <Evaluation logOut={handleLogout}/> : <Navigate to="/" />}
             />
             <Route
               path="/detail"
-              element={isAuthenticated ? <Detail /> : <Navigate to="/" />}
+              element= {<Detail logOut={handleLogout}/>}
             />
             <Route
               path="/upload"
-              element={isAuthenticated ? <Upload /> : <Navigate to="/" />}
+              element={isAuthenticated ? <Upload logOut={handleLogout}/> : <Navigate to="/" />}
             />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>
