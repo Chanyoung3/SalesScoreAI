@@ -1,0 +1,9 @@
+ Identify the relevant sentence or phrase in the input dialogue that is a positive answer to the {"output"}. Print this sentence from the input dialogue. 
+
+"input": Input dialogue:
+{
+}
+
+"output": output template:
+{
+}
