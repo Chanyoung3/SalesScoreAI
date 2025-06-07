@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { TextField, Box, Typography, Grid, Tooltip, Button } from "@mui/material";
 
 function Script({ identityInfo }){
@@ -133,6 +133,7 @@ function RestScript(){
       ],
     },
   ];
+  
   return(
     <>
     <Box sx={{ width: '100%', mt: 3 }}>

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Button, Typography, Input } from '@mui/material';
+import Header from "./Header";
+import Sidebar from "./Sidebar";
 
-function Upload() {
+function Upload({ logOut }) {
   const [fileName, setFileName] = useState('');
 
   const handleFileChange = (e) => {
@@ -23,37 +25,37 @@ function Upload() {
   };
 
   return (
-    <Box
-      sx={{
-        maxWidth: 400,
-        margin: '0 auto',
-        mt: 5,
-        p: 3,
-        border: '1px solid #ccc',
-        borderRadius: 2,
-        textAlign: 'center',
-      }}
-    >
-      <Typography variant="h6" gutterBottom>
-        텍스트 파일 업로드
-      </Typography>
+    <>
+      <Box sx={{ width: "100%", margin: "0 auto", height: "100vh", display: "flex", flexDirection: "column" }} >
+        <Header />
+        <Box sx={{ display: "flex", flexGrow: 1, height: "calc(100vh - 64px)", width: "100%" }} >
+          <Box sx={{ width: "280px", flexShrink: 0 }}>
+            <Sidebar logOut={logOut}/>
+          </Box>
+          <Box sx={{ flexGrow: 1, p: 2, overflowY: "auto" }}>
+            <Typography variant="h6" gutterBottom>
+              텍스트 파일 업로드
+            </Typography>
 
-      <Input
-        type="file"
-        inputProps={{ accept: '.txt' }}
-        onChange={handleFileChange}
-        fullWidth
-        sx={{ mb: 2 }}
-      />
+            <Input
+              type="file"
+              inputProps={{ accept: '.txt' }}
+              onChange={handleFileChange}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
 
-      <Typography variant="body2" sx={{ mb: 2 }}>
-        {fileName ? `선택된 파일: ${fileName}` : '파일이 선택되지 않았습니다'}
-      </Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              {fileName ? `선택된 파일: ${fileName}` : '파일이 선택되지 않았습니다'}
+            </Typography>
 
-      <Button variant="contained" onClick={handleUpload}>
-        업로드
-      </Button>
-    </Box>
+            <Button variant="contained" onClick={handleUpload}>
+              업로드
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    </>
   );
 }
 

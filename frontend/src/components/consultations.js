@@ -1,10 +1,13 @@
-import { TextField, Radio, RadioGroup, FormControlLabel, FormLabel, Button, Box, Grid } from "@mui/material";
+import { TextField, Radio, RadioGroup, FormControlLabel, FormLabel, Button, Box, Grid, Modal } from "@mui/material";
 import { DateRangePicker } from '@mui/x-date-pickers-pro/DateRangePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DataGrid } from "@mui/x-data-grid";
 import ko from 'date-fns/locale/ko';
 import { useState } from "react";
+import Detail from './detail';
+import Header from "./Header";
+import Sidebar from "./Sidebar";
 import '../App.css';
 
 function Consultations({ logOut }) {
@@ -36,102 +39,159 @@ function Consultations({ logOut }) {
     { field: "paymentIntention", headerName: "납부의사", flex: 1, sortable: false, disableColumnMenu: true },
   ];
 
+  const [openPopup, setOpenPopup] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
+
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
-      <Box border={1} borderColor="#ccc" padding={2} marginBottom={2}>
-        <Grid container spacing={2} alignItems="center" justifyContent="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <Box display="flex" alignItems="center" gap={1}>
-              <label>상담사</label>
-              <TextField
-                variant="outlined"
-                size="small"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-            </Box>
-          </Grid>
+    <>
+      <Box sx={{ width: "100%", margin: "0 auto", height: "100vh", display: "flex", flexDirection: "column" }} >
+        <Header />
+        <Box sx={{ display: "flex", flexGrow: 1, height: "calc(100vh - 64px)", width: "100%" }} >
+          <Box sx={{ width: "280px", flexShrink: 0 }}>
+            <Sidebar logOut={logOut}/>
+          </Box>
+          <Box sx={{ flexGrow: 1, p: 2, overflowY: "auto" }}>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
+              <Box border={1} borderColor="#ccc" padding={2} marginBottom={2}>
+                <Grid container spacing={2} alignItems="center" justifyContent="center">
+                  <Grid item xs={12} sm={6} md={4}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <label>상담사</label>
+                      <TextField
+                        variant="outlined"
+                        size="small"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                      />
+                    </Box>
+                  </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <label>연월일</label>
-            <DateRangePicker
-              localeText={{ start: '시작일', end: '종료일' }}
-              value={dateRange}
-              onChange={(newValue) => setDateRange(newValue)}
-              format="yyyy년MM월dd일"
-              slotProps={{
-                textField: {
-                  size: 'small',
-                  sx: { height: 40, '& .MuiInputBase-root': { height: 40, },
-                    '& input': { padding: '10px 14px', },
-                  }
-                }
-              }}
-            />
-            </Box>
-          </Grid>
-        </Grid>
+                  <Grid item xs={12} sm={6} md={4}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <label>연월일</label>
+                      <DateRangePicker
+                        localeText={{ start: '시작일', end: '종료일' }}
+                        value={dateRange}
+                        onChange={(newValue) => setDateRange(newValue)}
+                        format="yyyy년MM월dd일"
+                        slotProps={{
+                          textField: {
+                            size: 'small',
+                            sx: {
+                              height: 40, '& .MuiInputBase-root': { height: 40, },
+                              '& input': { padding: '10px 14px', },
+                            }
+                          }
+                        }}
+                      />
+                    </Box>
+                  </Grid>
+                </Grid>
 
-        <Box mt={2} borderTop={1} pt={2}>
-          <Grid container spacing={2} justifyContent="center">
-            <Grid item xs={6}>
-              <FormLabel>유효여부</FormLabel>
-              <RadioGroup row value={valid} onChange={(e) => setValid(e.target.value)}>
-                <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
-                <FormControlLabel value="Y" control={<Radio />} label="Y" />
-                <FormControlLabel value="N" control={<Radio />} label="N" />
-              </RadioGroup>
+                <Box mt={2} borderTop={1} pt={2}>
+                  <Grid container spacing={2} justifyContent="center">
+                    <Grid item xs={6}>
+                      <FormLabel>유효여부</FormLabel>
+                      <RadioGroup row value={valid} onChange={(e) => setValid(e.target.value)}>
+                        <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
+                        <FormControlLabel value="Y" control={<Radio />} label="Y" />
+                        <FormControlLabel value="N" control={<Radio />} label="N" />
+                      </RadioGroup>
 
-              <FormLabel>금지문구</FormLabel>
-              <RadioGroup row value={bannedWords} onChange={(e) => setBannedWords(e.target.value)}>
-                <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
-                <FormControlLabel value="Y" control={<Radio />} label="Y" />
-                <FormControlLabel value="N" control={<Radio />} label="N" />
-              </RadioGroup>
+                      <FormLabel>금지문구</FormLabel>
+                      <RadioGroup row value={bannedWords} onChange={(e) => setBannedWords(e.target.value)}>
+                        <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
+                        <FormControlLabel value="Y" control={<Radio />} label="Y" />
+                        <FormControlLabel value="N" control={<Radio />} label="N" />
+                      </RadioGroup>
 
-              <FormLabel>납부의사</FormLabel>
-              <RadioGroup row value={paymentIntention} onChange={(e) => setPaymentIntention(e.target.value)}>
-                <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
-                <FormControlLabel value="Y" control={<Radio />} label="Y" />
-                <FormControlLabel value="N" control={<Radio />} label="N" />
-              </RadioGroup>
-            </Grid>
+                      <FormLabel>납부의사</FormLabel>
+                      <RadioGroup row value={paymentIntention} onChange={(e) => setPaymentIntention(e.target.value)}>
+                        <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
+                        <FormControlLabel value="Y" control={<Radio />} label="Y" />
+                        <FormControlLabel value="N" control={<Radio />} label="N" />
+                      </RadioGroup>
+                    </Grid>
 
-            <Grid item xs={6}>
-              <FormLabel>오안내</FormLabel>
-              <RadioGroup row value={misguide} onChange={(e) => setMisguide(e.target.value)}>
-                <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
-                <FormControlLabel value="Y" control={<Radio />} label="Y" />
-                <FormControlLabel value="N" control={<Radio />} label="N" />
-              </RadioGroup>
+                    <Grid item xs={6}>
+                      <FormLabel>오안내</FormLabel>
+                      <RadioGroup row value={misguide} onChange={(e) => setMisguide(e.target.value)}>
+                        <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
+                        <FormControlLabel value="Y" control={<Radio />} label="Y" />
+                        <FormControlLabel value="N" control={<Radio />} label="N" />
+                      </RadioGroup>
 
-              <FormLabel>불법추심</FormLabel>
-              <RadioGroup row value={illegalCollection} onChange={(e) => setIllegalCollection(e.target.value)}>
-                <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
-                <FormControlLabel value="Y" control={<Radio />} label="Y" />
-                <FormControlLabel value="N" control={<Radio />} label="N" />
-              </RadioGroup>
+                      <FormLabel>불법추심</FormLabel>
+                      <RadioGroup row value={illegalCollection} onChange={(e) => setIllegalCollection(e.target.value)}>
+                        <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
+                        <FormControlLabel value="Y" control={<Radio />} label="Y" />
+                        <FormControlLabel value="N" control={<Radio />} label="N" />
+                      </RadioGroup>
 
-              <Box textAlign="right" mt={2}>
-                <Button variant="contained" color="primary">검색</Button>
+                      <Box textAlign="right" mt={2}>
+                        <Button variant="contained" color="primary">검색</Button>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
               </Box>
-            </Grid>
-          </Grid>
+
+              <Box mt={2} sx={{ height: 400, width: "100%" }}>
+                <DataGrid
+                  rows={dummyData}
+                  columns={columns}
+                  disableRowSelectionOnClick
+                  onRowClick={(params) => {
+                    setSelectedRow(params.row);
+                    setOpenPopup(true);
+                  }}
+                />
+              </Box>
+
+              <Modal
+                open={openPopup}
+                onClose={() => setOpenPopup(false)}
+                aria-labelledby="detail-popup"
+                aria-describedby="detail-popup-description"
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    bgcolor: "background.paper",
+                    boxShadow: 24,
+                    p: 4,
+                    width: {
+                      xs: "95%",
+                      sm: 700,
+                      md: 1000,
+                    },
+                    maxHeight: "80vh",
+                    overflowY: "auto",
+                    borderRadius: 2,
+                  }}
+                >
+
+                  {/* 항상 동일한 Detail 컴포넌트 보여주기 */}
+                  <Detail />
+                  <Button
+                    onClick={() => setOpenPopup(false)}
+                    variant="outlined"
+                    sx={{ mb: 2 }}
+                  >
+                    닫기
+                  </Button>
+                </Box>
+              </Modal>
+            </LocalizationProvider>
+          </Box>
         </Box>
       </Box>
-
-      <Box mt={2} sx={{ height: 400, width: "100%" }}>
-        <DataGrid
-          rows={dummyData}
-          columns={columns}
-          disableRowSelectionOnClick
-        />
-      </Box>
-      <Button variant="contained">상담원 평가</Button>
-      <Button variant="contained" onClick={logOut}>Log out</Button>
-    </LocalizationProvider>
+    </>
   );
 }
+
 
 export default Consultations;

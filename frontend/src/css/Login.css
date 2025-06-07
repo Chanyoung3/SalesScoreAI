@@ -12,7 +12,13 @@
   width: 235px;
 }
 
-.loginbutton {
+.button {
   padding: 0.5rem;
   width: 100%;
 }
+
+.signbutton {
+  padding: 0.5rem;
+  width: 25%;
+}
+
