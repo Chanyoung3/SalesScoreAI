@@ -16,7 +16,7 @@ public class ConsultationController {
 
     private final ConsultationService consultationService; // 상담 관련 비즈니스 로직을 처리하는 서비스
 
-    @Autowired // 생성자 주입을 통해 ConsultationService를 주입받습니다.
+    @Autowired
     public ConsultationController(ConsultationService consultationService) {
         this.consultationService = consultationService;
     }
@@ -47,20 +47,15 @@ public class ConsultationController {
         }
     }
 
-
-    // 오류 수정 중========================================================================
-    // ID로 특정 상담 정보를 조회하는 API 엔드포인트 (GET /api/consultations/{id})
-    // @PathVariable: URL 경로 변수를 메서드 파라미터로 매핑
-    //    @GetMapping("/{id}")
-    //    public ResponseEntity<?> getConsultationById(@PathVariable Long id) {
-    //        // ConsultationService를 통해 상담 정보를 조회
-    //        return consultationService.getConsultationById(id)
-    //                // 조회 성공 시: HTTP 200 OK 상태 코드와 함께 상담 정보를 반환
-    //                .map(ResponseEntity::ok)
-    //                // 조회 실패 시 (상담 정보를 찾을 수 없음): HTTP 404 Not Found 상태 코드와 함께 메시지를 반환
-    //                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body("해당 ID의 상담 정보를 찾을 수 없습니다."));
-    //    }
-    // 오류 수정 중========================================================================
+    //특정 상담 ID로 상담 정보를 조회하는 API 엔드포인트입니다.
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getConsultationById(@PathVariable Long id) {
+        return consultationService.getConsultationById(id)
+                // 조회 성공 시: Optional에 값이 존재하면 이 map 블록이 실행
+                .map(ResponseEntity::ok)
+                // 조회 실패 시 (상담 정보를 찾을 수 없음): Optional에 값이 없으면 이 orElseGet 블록이 실행
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+    }
 
     // 특정 상담사 ID에 해당하는 모든 상담 목록을 조회하는 API 엔드포인트 (GET /api/consultations/counselor/{counselorId})
     @GetMapping("/counselor/{counselorId}")

@@ -57,12 +57,16 @@ public class ConsultationService {
         consultation.setRawTranscriptContent(rawContent); // 원본 상담 내용 텍스트 저장
 
         // 3. Ollama AI 분석 요청:
-       //========================================
+        // **[올라마 프롬프트 담당자 연동 필요]**:
+        logger.info("상담 내용을 Ollama AI에 분석 요청 중...");
+        OllamaAiService.OllamaAnalysisResult analysisResult = ollamaAiService.analyzeConsultation(rawContent);
+        logger.info("Ollama AI 분석 완료. 점수: {}, 피드백: {}", analysisResult.getScore(), analysisResult.getFeedback());
 
-        // 4. Ollama AI 분석 결과를 Consultation 객체에 설정
-        //=======================================
+        // 4. Ollama AI 분석 결과를 Consultation 객체에 설정합니다.
+        consultation.setOllamaScore(analysisResult.getScore());
+        consultation.setOllamaFeedback(analysisResult.getFeedback());
 
-        // 5. 모든 정보가 설정된 Consultation 객체를 데이터베이스에 저장하고 반환
+        // 5. 모든 정보가 설정된 Consultation 객체를 데이터베이스에 저장하고 반환합니다.
         return consultationRepository.save(consultation);
     }
 

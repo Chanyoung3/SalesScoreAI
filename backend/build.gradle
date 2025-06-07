@@ -57,6 +57,16 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // JWT JSON 파서 (Jackson 사용 시)
 
     implementation 'org.hibernate.orm:hibernate-community-dialects:6.6.15.Final'
+
+    // 설치된 MySQL Server 버전에 맞는 드라이버 버전을 확인하여 사용하세요.
+    implementation 'mysql:mysql-connector-java:8.0.33'
+
+    // Spring Security Cryptographic: 비밀번호 암호화(BCrypt)를 위해 필요합니다.
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    // 개발 중 자동 재시작을 위한 Spring Boot DevTools (선택 사항이지만 개발에 매우 유용)
+    // 코드를 변경할 때마다 서버를 수동으로 재시작할 필요 없이 자동으로 애플리케이션을 다시 로드해줍니다.
+    runtimeOnly 'org.springframework.boot:spring-boot-devtools'
 }
 
 tasks.named('test') {
