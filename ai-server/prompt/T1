@@ -1,0 +1,11 @@
+Identify the relevant sentence or phrase in the input dialogue that corresponds to the instruction "안전한 신용관리바랍니다. 감사합니다".
+Print this sentence from the input dialogue in "output". If not exist, print "NA".
+No explanation! Please response in Korean.
+
+"input": Input dialogue:
+{
+}
+
+"output": output template:
+{
+}
