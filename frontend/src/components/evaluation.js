@@ -15,29 +15,61 @@ import '../App.css';
 function Evaluation({ logOut }) {
   const [searchText, setSearchText] = useState("");
   const [startDate, setStartDate] = useState(new Date());;
-  const data = [
+  const data1 = [
     { name: '대상자', value: 400 },
     { name: '전체', value: 300 },
   ];
+  const data2 = [
+    { name: '대상자', value: 400 },
+    { name: '전체', value: 300 },
+  ];
+  const data3 = [
+    { name: '대상자', value: 400 },
+    { name: '전체', value: 300 },
+  ];
+
 
   const handleMonthChange = (offset) => {
     const newDate = addMonths(startDate, offset);
     setStartDate(newDate);
   };
 
-  const data1 = [
+  const tdata1 = [
     { 항목: '첫인사', 대상자: 4, 전체: 4.25 },
     { 항목: '본인확인', 대상자: 4.3, 전체: 4.38 },
     { 항목: '필수안내', 대상자: 3.4, 전체: 3.92 },
     { 항목: '끝인사', 대상자: 5, 전체: 4.44 },
   ];
 
-  const data2 = [
+  const tdata2 = [
     { 항목: '불법추심', 대상자: 0.18, 전체: 0.12 },
     { 항목: '금지문구', 대상자: 0.46, 전체: 0.30 },
     { 항목: '민원성', 대상자: 0.37, 전체: 0.38 },
   ];
 
+  /*
+  const [data1, setData1] = useState([]);
+  const [data2, setData2] = useState([]);
+  const [data3, setData3] = useState([]);
+  const [tdata1, setData4] = useState([]);
+  const [tdata2, setData5] = useState([]);
+
+  useEffect(() => {
+    axios
+      .post(`${process.env.REACT_APP_API_URL}/evaluation`)
+      .then((res) => {
+        setData1(res.data.data1);
+        setData2(res.data.data2);
+        setData3(res.data.data3);
+        setData4(res.data.tdata1);
+        setData5(res.data.tdata2);
+      })
+      .catch((err) => {
+        console.error("통계 데이터 불러오기 실패", err);
+      });
+  }, []);
+  */
+ 
   return (
     <>
       <Box sx={{ width: "100%", margin: "0 auto", height: "100vh", display: "flex", flexDirection: "column"}} >
@@ -88,7 +120,7 @@ function Evaluation({ logOut }) {
                     <BarChart
                       width={300}
                       height={200}
-                      data={data}
+                      data={data1}
                       layout="vertical"
                       margin={{ top: 20, right: 20, left: 20, bottom: 5 }}
                     >
@@ -129,7 +161,7 @@ function Evaluation({ logOut }) {
                     <BarChart
                       width={300}
                       height={200}
-                      data={data}
+                      data={data2}
                       layout="vertical"
                       margin={{ top: 20, right: 20, left: 20, bottom: 5 }}
                     >
@@ -170,7 +202,7 @@ function Evaluation({ logOut }) {
                     <BarChart
                       width={300}
                       height={200}
-                      data={data}
+                      data={data3}
                       layout="vertical"
                       margin={{ top: 20, right: 20, left: 20, bottom: 5 }}
                     >
@@ -240,7 +272,7 @@ function Evaluation({ logOut }) {
                     <Box borderBottom={1} borderColor="grey.500" p={1} fontWeight="bold">대상자 월 평균</Box>
                     <Box borderBottom={1} borderColor="grey.500" p={1} fontWeight="bold">전체 월 평균</Box>
 
-                    {data1.map((row, idx) => (
+                    {tdata1.map((row, idx) => (
                       <React.Fragment key={idx}>
                         <Box borderBottom={1} borderColor="grey.300" p={1}>{row.항목}</Box>
                         <Box borderBottom={1} borderColor="grey.300" p={1}>{row.대상자}</Box>
@@ -284,7 +316,7 @@ function Evaluation({ logOut }) {
                     <Box borderBottom={1} borderColor="grey.500" p={1} fontWeight="bold">대상자 빈도</Box>
                     <Box borderBottom={1} borderColor="grey.500" p={1} fontWeight="bold">전체 빈도</Box>
 
-                    {data2.map((row, idx) => (
+                    {tdata2.map((row, idx) => (
                       <React.Fragment key={idx}>
                         <Box borderBottom={1} borderColor="grey.300" p={1}>{row.항목}</Box>
                         <Box borderBottom={1} borderColor="grey.300" p={1}>{row.대상자}</Box>

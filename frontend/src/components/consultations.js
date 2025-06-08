@@ -4,7 +4,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DataGrid } from "@mui/x-data-grid";
 import ko from 'date-fns/locale/ko';
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Detail from './detail';
 import Header from "./Header";
 import Sidebar from "./Sidebar";
@@ -18,14 +18,16 @@ function Consultations({ logOut }) {
   const [bannedWords, setBannedWords] = useState("ALL");
   const [illegalCollection, setIllegalCollection] = useState("ALL");
   const [paymentIntention, setPaymentIntention] = useState("ALL");
-
-  const dummyData = [
+  const [openPopup, setOpenPopup] = useState(false);
+  
+  const data = [
     { id: 1, date: "20250401", cnumber: "01067783418", agentId: "5250023", callId: "CALL-1234", valid: "유효", scriptScore: 15, misguide: "N", bannedWords: "N", illegalCollection: "N", paymentIntention: "Y" },
     { id: 2, date: "20250401", cnumber: "01082216452", agentId: "5250023", callId: "CALL-1235", valid: "유효", scriptScore: 18, misguide: "Y", bannedWords: "Y", illegalCollection: "N", paymentIntention: "N" },
     { id: 3, date: "20250401", cnumber: "01029477196", agentId: "5250018", callId: "CALL-1236", valid: "유효", scriptScore: 20, misguide: "N", bannedWords: "N", illegalCollection: "Y", paymentIntention: "Y" },
     { id: 4, date: "20250401", cnumber: "01093590056", agentId: "5250018", callId: "CALL-1237", valid: "유효", scriptScore: 20, misguide: "N", bannedWords: "N", illegalCollection: "Y", paymentIntention: "Y" }
   ];
 
+  // 컬럼
   const columns = [
     { field: "date", headerName: "상담일자", flex: 1, disableColumnMenu: true },
     { field: "cnumber", headerName: "고객번호", flex: 1, disableColumnMenu: true },
@@ -39,8 +41,41 @@ function Consultations({ logOut }) {
     { field: "paymentIntention", headerName: "납부의사", flex: 1, sortable: false, disableColumnMenu: true },
   ];
 
-  const [openPopup, setOpenPopup] = useState(false);
-  const [selectedRow, setSelectedRow] = useState(null);
+  /*
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axios
+      .get(`${process.env.REACT_APP_API_URL}/consultations/all`)
+      .then((res) => {
+        setData(res.data); // 받아온 데이터 저장
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("데이터 불러오기 실패", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div>로딩 중...</div>;
+
+   const handleSearch = async () => {
+    const searchParams = {
+      id: 'CALL-1234',
+      bannedWords: 'Y',
+      valid: 'Y',
+    };
+
+    try {
+      const result = await searchConsultations(searchParams);
+      setData(result);
+    } catch (e) {
+      alert('검색 중 오류 발생');
+    }
+  };
+
+*/
 
   return (
     <>
@@ -129,7 +164,7 @@ function Consultations({ logOut }) {
                       </RadioGroup>
 
                       <Box textAlign="right" mt={2}>
-                        <Button variant="contained" color="primary">검색</Button>
+                        <Button variant="contained" color="primary" onClick={handleSearch}>검색</Button>
                       </Box>
                     </Grid>
                   </Grid>
@@ -138,7 +173,7 @@ function Consultations({ logOut }) {
 
               <Box mt={2} sx={{ height: 400, width: "100%" }}>
                 <DataGrid
-                  rows={dummyData}
+                  rows={data}
                   columns={columns}
                   disableRowSelectionOnClick
                   onRowClick={(params) => {
@@ -174,7 +209,6 @@ function Consultations({ logOut }) {
                   }}
                 >
 
-                  {/* 항상 동일한 Detail 컴포넌트 보여주기 */}
                   <Detail />
                   <Button
                     onClick={() => setOpenPopup(false)}

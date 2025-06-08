@@ -16,11 +16,34 @@ function Upload({ logOut }) {
     }
   };
 
-  const handleUpload = () => {
-    if (fileName) {
-      alert(`파일 "${fileName}" 업로드 처리`);
-    } else {
+  const handleUpload = async () => {
+    const fileInput = document.querySelector('input[type="file"]');
+    const file = fileInput.files[0];
+  
+    if (!file) {
       alert('파일을 선택해주세요.');
+      return;
+    }
+  
+    const formData = new FormData();
+    formData.append('file', file);
+  
+    try {
+      const response = await fetch('http://localhost:5000/api/consultations/upload', { // flask 서버
+        method: 'POST',
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        throw new Error('서버 응답 오류');
+      }
+  
+      // 성공 시 결과 내용은 무시하고 간단히 알림만
+      alert('등록 완료되었습니다.');
+      setFileName(''); // 선택된 파일 초기화
+    } catch (error) {
+      alert('파일 업로드 중 오류 발생');
+      console.error(error);
     }
   };
 
