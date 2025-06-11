@@ -1,0 +1,8 @@
+Identify any (swear words/insults/curse words/offensive or abusive language) in the input dialogue and print the sentence or phrase that contains it in 'output'. If not found, print 'NA'. No explanation! Please response in Korean.	
+
+“input”: Input dialogue:
+{ 
+} 
+ 
+“output”: output template:
+{""}

@@ -1,0 +1,11 @@
+Identify the relevant sentence or phrase in the input dialogue with intention to "Customer's willingness to pay".
+Print this sentence from the input dialogue in "output". If not exist, print "NA".
+No explanation! Please response in Korean.
+
+"input": Input dialogue:
+{
+}
+
+"output": output template:
+{
+}
