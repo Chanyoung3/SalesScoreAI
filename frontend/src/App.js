@@ -7,6 +7,7 @@ import Consultations from './components/consultations';
 import Evaluation from './components/evaluation';
 import Detail from './components/detail';
 import Upload from './components/upload'
+import Register from './components/signup';
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,10 @@ function App() {
                   <Login onLogin={handleLogin} />
                 )
               }
+            />
+             <Route
+              path="/register"
+              element={<Register />}
             />
             <Route
               path="/consultations"

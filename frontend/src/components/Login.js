@@ -74,7 +74,7 @@ function Login({ onLogin }) {
         <button className="button" type="submit">로그인</button>
       </form>
       <br />
-      <button className="signbutton">회원가입</button>
+      <button className="signbutton" onClick={() => navigate("/register")}>회원가입</button>
       {open && (
         <p style={{ color: 'red' }}>
           로그인 실패. 아이디와 비밀번호를 확인하세요.

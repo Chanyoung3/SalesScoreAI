@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Button, Typography, Input } from '@mui/material';
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import axios from 'axios';
 
 function Upload({ logOut }) {
   const [fileName, setFileName] = useState('');
@@ -25,25 +26,27 @@ function Upload({ logOut }) {
       return;
     }
   
+    // 파일명에서 counselorId 추출
+    const fileNameParts = file.name.split('_');
+    const counselorId = fileNameParts[2];  // 3402가 들어있다고 가정
+  
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('counselorId', counselorId);
+    formData.append('customerInfo', '고객정보'); // 필요시 적절한 값 넣기
   
     try {
-      const response = await fetch('http://localhost:5000/api/consultations/upload', { // flask 서버
-        method: 'POST',
-        body: formData,
-      });
+      const response = await axios.post(
+        process.env.REACT_APP_API_URL + '/consultations/upload',
+        formData
+      );
   
-      if (!response.ok) {
-        throw new Error('서버 응답 오류');
-      }
-  
-      // 성공 시 결과 내용은 무시하고 간단히 알림만
+      console.log("파일 업로드 성공", response.data);
       alert('등록 완료되었습니다.');
-      setFileName(''); // 선택된 파일 초기화
+      setFileName('');
     } catch (error) {
+      console.error("파일 업로드 실패", error);
       alert('파일 업로드 중 오류 발생');
-      console.error(error);
     }
   };
 

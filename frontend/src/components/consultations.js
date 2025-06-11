@@ -9,6 +9,7 @@ import Detail from './detail';
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import '../App.css';
+import axios from 'axios';
 
 function Consultations({ logOut }) {
   const [searchText, setSearchText] = useState("");
@@ -19,14 +20,16 @@ function Consultations({ logOut }) {
   const [illegalCollection, setIllegalCollection] = useState("ALL");
   const [paymentIntention, setPaymentIntention] = useState("ALL");
   const [openPopup, setOpenPopup] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
   
+  /*
   const data = [
     { id: 1, date: "20250401", cnumber: "01067783418", agentId: "5250023", callId: "CALL-1234", valid: "유효", scriptScore: 15, misguide: "N", bannedWords: "N", illegalCollection: "N", paymentIntention: "Y" },
     { id: 2, date: "20250401", cnumber: "01082216452", agentId: "5250023", callId: "CALL-1235", valid: "유효", scriptScore: 18, misguide: "Y", bannedWords: "Y", illegalCollection: "N", paymentIntention: "N" },
     { id: 3, date: "20250401", cnumber: "01029477196", agentId: "5250018", callId: "CALL-1236", valid: "유효", scriptScore: 20, misguide: "N", bannedWords: "N", illegalCollection: "Y", paymentIntention: "Y" },
     { id: 4, date: "20250401", cnumber: "01093590056", agentId: "5250018", callId: "CALL-1237", valid: "유효", scriptScore: 20, misguide: "N", bannedWords: "N", illegalCollection: "Y", paymentIntention: "Y" }
   ];
-
+*/
   // 컬럼
   const columns = [
     { field: "date", headerName: "상담일자", flex: 1, disableColumnMenu: true },
@@ -41,41 +44,34 @@ function Consultations({ logOut }) {
     { field: "paymentIntention", headerName: "납부의사", flex: 1, sortable: false, disableColumnMenu: true },
   ];
 
-  /*
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     axios
-      .get(`${process.env.REACT_APP_API_URL}/consultations/all`)
+      .get(`${process.env.REACT_APP_API_URL}/consultations/`)
       .then((res) => {
         setData(res.data); // 받아온 데이터 저장
-        setLoading(false);
       })
       .catch((err) => {
         console.error("데이터 불러오기 실패", err);
-        setLoading(false);
       });
   }, []);
 
-  if (loading) return <div>로딩 중...</div>;
-
-   const handleSearch = async () => {
+  const handleSearch = async () => {
     const searchParams = {
       id: 'CALL-1234',
       bannedWords: 'Y',
       valid: 'Y',
     };
-
+  
     try {
-      const result = await searchConsultations(searchParams);
-      setData(result);
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/consultations/search`, { params: searchParams });
+      setData(res.data);
     } catch (e) {
       alert('검색 중 오류 발생');
     }
   };
-
-*/
+  
 
   return (
     <>

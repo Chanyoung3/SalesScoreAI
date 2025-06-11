@@ -129,7 +129,7 @@ function Evaluation({ logOut }) {
                       <YAxis dataKey="name" type="category" />
                       <Tooltip />
                       <Bar dataKey="value" barSize={20}>
-                        {data.map((entry, index) => (
+                        {data1.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={index === 0 ? '#C0504D' : '#4F81BD'}
@@ -170,7 +170,7 @@ function Evaluation({ logOut }) {
                       <YAxis dataKey="name" type="category" />
                       <Tooltip />
                       <Bar dataKey="value" barSize={20}>
-                        {data.map((entry, index) => (
+                        {data2.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={index === 0 ? '#C0504D' : '#4F81BD'}
@@ -211,7 +211,7 @@ function Evaluation({ logOut }) {
                       <YAxis dataKey="name" type="category" />
                       <Tooltip />
                       <Bar dataKey="value" barSize={20}>
-                        {data.map((entry, index) => (
+                        {data3.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={index === 0 ? '#C0504D' : '#4F81BD'}
