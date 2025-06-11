@@ -45,14 +45,12 @@ public class ConsultationRepository {
             KeyHolder keyHolder = new GeneratedKeyHolder(); // 자동 생성된 키(ID)를 저장할 객체
 
             jdbcTemplate.update(connection -> {
-                // PreparedStatement를 생성하며 자동 생성된 키를 반환하도록 설정
                 PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                 ps.setLong(1, consultation.getCounselorId());
                 ps.setString(2, consultation.getConsultationDate());
                 ps.setString(3, consultation.getCustomerInfo());
                 ps.setString(4, consultation.getTranscriptFilePath());
                 ps.setString(5, consultation.getRawTranscriptContent());
-                // setObject: Integer 값이 null일 수도 있으므로 setInt 대신 setObject 사용
                 ps.setObject(6, consultation.getOllamaScore());
                 ps.setString(7, consultation.getOllamaFeedback());
                 return ps;
@@ -65,7 +63,7 @@ public class ConsultationRepository {
             }
             return consultation;
         } else { // ID가 있으면 기존 상담 정보 업데이트 (UPDATE)
-            String sql = "UPDATE consultations SET counselor_id = ?, consultation_date = ?, customer_info = ?, transcript_file_path = ?, raw_transcript_content = ?, ollama_score = ?, ollama_feedback = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+            String sql = "UPDATE consultations SET counselor_id = ?, consultation_date = ?, customer_info = ?, transcript_file_path = ?, raw_transcript_content = ?, ollama_score = ?, ollama_feedback = ? WHERE id = ?";
             jdbcTemplate.update(sql,
                     consultation.getCounselorId(),
                     consultation.getConsultationDate(),

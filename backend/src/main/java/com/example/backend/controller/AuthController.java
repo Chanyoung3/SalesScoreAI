@@ -30,10 +30,9 @@ public class AuthController {
         // RegisterRequest DTO에서 받은 정보로 Counselor 모델 객체를 생성
         Counselor newCounselor = new Counselor();
         newCounselor.setUsername(request.getUsername());
-        newCounselor.setPassword(request.getPassword()); // 비밀번호는 서비스 계층에서 해시화
+        newCounselor.setPassword(request.getPassword());
         newCounselor.setEmail(request.getEmail());
         newCounselor.setName(request.getName());
-        // 역할이 제공되지 않으면 기본값으로 "COUNSELOR"를 설정
         newCounselor.setRole(request.getRole() != null ? request.getRole() : "COUNSELOR");
 
         // CounselorService를 통해 상담사를 등록하고 결과를 받음

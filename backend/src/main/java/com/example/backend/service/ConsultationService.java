@@ -15,28 +15,29 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
+
 @Service
 public class ConsultationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ConsultationService.class); // 로깅을 위한 Logger 객체
     private final ConsultationRepository consultationRepository; // 상담 데이터 접근을 위한 리포지토리
-    private final OllamaAiService ollamaAiService; // Ollama AI 서비스 (AI 분석 요청)
+    // private final OllamaAiService ollamaAiService; // Ollama AI 서비스 (AI 분석 요청)
+    private final PythonAnalysisService pythonAnalysisService; // 새로 정의할 파이썬 분석 서비스
 
     // 상담 내용을 저장할 파일 디렉토리 경로 (프로젝트 루트에 'uploads' 폴더 생성)
     private final String UPLOAD_DIR = "./uploads/";
 
-    @Autowired // 생성자 주입을 통해 ConsultationRepository와 OllamaAiService를 주입받음
-    public ConsultationService(ConsultationRepository consultationRepository, OllamaAiService ollamaAiService) {
+    @Autowired
+    public ConsultationService(ConsultationRepository consultationRepository, PythonAnalysisService pythonAnalysisService) {
         this.consultationRepository = consultationRepository;
-        this.ollamaAiService = ollamaAiService;
-        // 서비스 초기화 시 업로드 디렉토리가 없으면 생성
+        this.pythonAnalysisService = pythonAnalysisService; // PythonAnalysisService 주입
         try {
             Files.createDirectories(Paths.get(UPLOAD_DIR));
             logger.info("Upload directory created or already exists: {}", UPLOAD_DIR);
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error("Failed to create upload directory: {}", e.getMessage(), e);
-            // 디렉토리 생성 실패는 애플리케이션 시작에 심각한 영향을 줄 수 있으므로 예외를 다시 던질 수 있음
-            // throw new RuntimeException("Failed to initialize upload directory", e);
         }
     }
 
@@ -56,14 +57,36 @@ public class ConsultationService {
         consultation.setTranscriptFilePath(filePath); // 저장된 파일 경로 설정
         consultation.setRawTranscriptContent(rawContent); // 원본 상담 내용 텍스트 저장
 
-        // 3. Ollama AI 분석 요청:
-       //========================================
+//        // 3. Ollama AI 분석 요청:
+//        // **[올라마 프롬프트 담당자 연동 필요]**:
+//        logger.info("상담 내용을 Ollama AI에 분석 요청 중...");
+//        OllamaAiService.OllamaAnalysisResult analysisResult = ollamaAiService.analyzeConsultation(rawContent);
+//        logger.info("Ollama AI 분석 완료. 점수: {}, 피드백: {}", analysisResult.getScore(), analysisResult.getFeedback());
 
-        // 4. Ollama AI 분석 결과를 Consultation 객체에 설정
-        //=======================================
+        // 4. Ollama AI 분석 결과를 Consultation 객체에 설정합니다.
+        consultation.setOllamaScore(null);
+        consultation.setOllamaFeedback(null);
 
-        // 5. 모든 정보가 설정된 Consultation 객체를 데이터베이스에 저장하고 반환
-        return consultationRepository.save(consultation);
+        // 데이터베이스에 먼저 저장하여 ID를 할당받습니다.
+        Consultation savedConsultation = consultationRepository.save(consultation);
+
+        // 파이썬 분석 서비스에 분석 요청 (비동기 처리)
+        // Python 서비스에 전달할 상담 ID와 원본 텍스트를 준비합니다.
+        logger.info("파이썬 분석 서비스에 상담 ID {} 분석 요청 중...", savedConsultation.getId());
+        try {
+            // 파이썬 서비스는 비동기로 분석을 수행하고, 완료되면 DB를 업데이트할 것입니다.
+            // 여기서는 응답을 기다리지 않고 요청만 보냅니다.
+            // 필요한 경우 PythonAnalysisService의 analyzeConsultation 메서드가 Promise/CompletableFuture 등을 반환하도록 할 수 있습니다.
+            pythonAnalysisService.analyzeConsultation(savedConsultation.getId(), rawContent);
+            logger.info("파이썬 분석 서비스 요청 완료. (비동기 처리)");
+        } catch (Exception e) {
+            logger.error("파이썬 분석 서비스 호출 중 오류 발생: {}", e.getMessage(), e);
+            // 오류 발생 시에도 일단 상담 정보는 저장되었으므로, 프론트엔드에는 성공 응답을 줄 수 있습니다.
+            // 다만 분석 실패를 표시할 수 있도록 추가적인 처리가 필요할 수 있습니다.
+        }
+
+        // 프론트엔드에는 초기 저장된 Consultation 객체를 반환 (점수/피드백은 아직 NULL)
+        return savedConsultation;
     }
 
     // ID로 특정 상담 정보를 조회하는 메서드
