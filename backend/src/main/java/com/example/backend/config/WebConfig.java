@@ -13,7 +13,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 // 프론트엔드 애플리케이션이 실행되는 오리진(Origin)을 허용
                 // 개발 중에는 localhost:3000(React/Vue 기본 포트) 등을 추가하고, 실제 배포 시에는 도메인을 추가
-                .allowedOrigins("http://localhost:3000", "http://211.188.58.30:8080") // 여기에 프론트엔드 URL을 추가
+                .allowedOrigins("http://localhost:3000","http://211.188.58.30", "http://211.188.58.30:8080") // 여기에 프론트엔드 URL을 추가
                 // 허용할 HTTP 메서드를 지정
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 // 모든 요청 헤더를 허용
