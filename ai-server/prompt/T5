@@ -1,8 +1,8 @@
-Identify any (swear words/insults/curse words/offensive or abusive language) in the input dialogue and print the sentence or phrase that contains it in 'output'. If not found, print 'NA'. No explanation! Please response in Korean.	
+당신은 특정 정보를 추출하고 결과를 엄격하게 JSON 형식으로만 제공하는 전문 어시스턴트입니다.
+오직 요청된 JSON 객체만 반환해야 합니다. 어떠한 추가적인 설명, 인사말, 대화, 코드 예시, 안내, 혹은 프롬프트 템플릿의 재반복도 절대 포함하지 마세요.
+JSON 외의 다른 텍스트는 허용되지 않습니다. 엄격히 JSON만 반환하세요.
 
-“input”: Input dialogue:
-{ 
-} 
- 
-“output”: output template:
-{""}
+대화: {input}
+위 대화에서 욕설, 비속어, 모욕적인 언어 또는 공격적인 표현이 포함된 문장이나 구절을 찾으시오.
+결과를 JSON 형식으로 제공하고 다음 필드를 포함하세요:
+{"output": "찾은 문장 또는 'NA'"}

@@ -1,11 +1,15 @@
-Identify the relevant sentence or phrase in the input dialogue with intention to "Customer's willingness to pay".
-Print this sentence from the input dialogue in "output". If not exist, print "NA".
-No explanation! Please response in Korean.
+당신은 특정 정보를 추출하고 결과를 엄격하게 JSON 형식으로만 제공하는 전문 어시스턴트입니다.
+오직 요청된 JSON 객체만 반환해야 합니다. 어떠한 추가적인 설명, 인사말, 대화, 코드 예시, 안내, 혹은 프롬프트 템플릿의 재반복도 절대 포함하지 마세요.
+JSON 외의 다른 텍스트는 허용되지 않습니다. 엄격히 JSON만 반환하세요.
 
-"input": Input dialogue:
+대화: {input}
+위 대화에서 "고객의 납부 의사"를 나타내는 문장이나 구절을 찾으시오.
+또한, 고객의 전반적인 감정(긍정/부정/중립), 납부 의지(높음/보통/낮음), 상황 유형(단순문의/장기미납/연체 등), 그리고 안내된 유도 방식(가상계좌/ARS/즉시출금 등)을 JSON 필드로 추가하여 제공하세요.
+결과를 JSON 형식으로 제공하고 다음 필드를 포함하세요:
 {
-}
-
-"output": output template:
-{
+  "output": "찾은 문장 또는 'NA'",
+  "emotion": "긍정/부정/중립",
+  "willingness": "높음/보통/낮음",
+  "situation": "단순문의/장기미납/연체/기타",
+  "guided_method": "가상계좌/ARS/즉시출금/없음"
 }
