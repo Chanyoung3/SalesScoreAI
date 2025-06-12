@@ -1,4 +1,3 @@
-// src/main/java/com/ollamacounseling/backend/service/OllamaAiService.java
 package com.example.backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
