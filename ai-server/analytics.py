@@ -199,7 +199,6 @@ def summarize_results(counsel_id):
                 )
             ).fetchone()
             if row and row.result_json:
-                # --- !!! 이 부분 추가: row.result_json이 문자열인 경우 다시 파싱 시도 !!! ---
                 current_result_json = row.result_json
                 if isinstance(current_result_json, str):
                     try:
@@ -208,8 +207,7 @@ def summarize_results(counsel_id):
                     except json.JSONDecodeError:
                         print(f"[{datetime.now()}] [DB Load] {counsel_id}-{task_code} result_json 재파싱 실패, 기본값 사용.")
                         current_result_json = {"parse_error": True, "output": "DB 로드 오류/비JSON"}
-                # --- 추가 로직 끝 ---
-                task_results[task_code] = current_result_json # 이제 딕셔너리 또는 오류 딕셔너리
+                task_results[task_code] = current_result_json
 
         # --- 점수 계산 로직 (T1-T5 중 몇 개 성공했는지) ---
         # 프롬프트는 JSON을 반환하지 않고 "output" 필드만 포함하는 텍스트 응답을 가정합니다.
@@ -220,47 +218,33 @@ def summarize_results(counsel_id):
         # T1: "안전한 신용관리바랍니다. 감사합니다" 문장 존재 여부
         t1_output = task_results.get("T1", {}).get("output", "").strip()
         t1_success = (t1_output != "NA" and t1_output != "")
-        if t1_success:
-            score_count += 1
-            feedback_parts.append(f"[T1] 종료 멘트 성공: '{t1_output}'")
-        else:
-            feedback_parts.append("[T1] 종료 멘트 실패: 해당 멘트 없음")
+        if t1_success: score_count += 1; feedback_parts.append(f"[T1] 종료 멘트 성공: '{t1_output}'")
+        else: feedback_parts.append("[T1] 종료 멘트 실패: 해당 멘트 없음")
 
         # T2: 고객 납부 의사 문장 존재 여부
         t2_output = task_results.get("T2", {}).get("output", "").strip()
         t2_success = (t2_output != "NA" and t2_output != "")
-        if t2_success:
-            score_count += 1
-            feedback_parts.append(f"[T2] 납부 의사 언급 성공: '{t2_output}'")
-        else:
-            feedback_parts.append("[T2] 납부 의사 언급 실패: 해당 멘트 없음")
+        if t2_success: score_count += 1; feedback_parts.append(f"[T2] 납부 의사 언급 성공: '{t2_output}'")
+        else: feedback_parts.append("[T2] 납부 의사 언급 실패: 해당 멘트 없음")
 
         # T3: 긍정 답변 존재 여부
         t3_output = task_results.get("T3", {}).get("output", "").strip()
         t3_success = (t3_output != "NA" and t3_output != "")
-        if t3_success:
-            score_count += 1
-            feedback_parts.append(f"[T3] 고객 긍정 답변 확인: '{t3_output}'")
-        else:
-            feedback_parts.append("[T3] 고객 긍정 답변 없음")
+        if t3_success: score_count += 1; feedback_parts.append(f"[T3] 고객 긍정 답변 확인: '{t3_output}'")
+        else: feedback_parts.append("[T3] 고객 긍정 답변 없음")
 
         # T4: "수고하세요" 포함 여부 (이 멘트가 없어야 점수)
         t4_output = task_results.get("T4", {}).get("output", "").strip()
-        t4_contains_discourtesy = (t4_output != "NA" and t4_output != "") # output이 있다면 '수고하세요'가 발견된 것
-        if not t4_contains_discourtesy: # '수고하세요'가 없으면 성공
-            score_count += 1
-            feedback_parts.append("[T4] '수고하세요' 멘트 없음: 성공")
-        else:
-            feedback_parts.append(f"[T4] '수고하세요' 멘트 포함: '{t4_output}'") # 있다면 피드백에만 포함
+        t4_contains_discourtesy = (t4_output != "NA" and t4_output != "")
+        if not t4_contains_discourtesy: score_count += 1; feedback_parts.append("[T4] '수고하세요' 멘트 없음: 성공")
+        else: feedback_parts.append(f"[T4] '수고하세요' 멘트 포함: '{t4_output}' (감점 요소)")
+
 
         # T5: 욕설/비속어 포함 여부 (이 멘트가 없어야 점수)
         t5_output = task_results.get("T5", {}).get("output", "").strip()
-        t5_contains_swear = (t5_output != "NA" and t5_output != "") # output이 있다면 욕설 발견된 것
-        if not t5_contains_swear: # 욕설/비속어가 없으면 성공
-            score_count += 1
-            feedback_parts.append("[T5] 욕설/비속어 없음: 성공")
-        else:
-            feedback_parts.append(f"[T5] 욕설/비속어 포함: '{t5_output}'") # 있다면 피드백에만 포함
+        t5_contains_swear = (t5_output != "NA" and t5_output != "")
+        if not t5_contains_swear: score_count += 1; feedback_parts.append("[T5] 욕설/비속어 없음: 성공")
+        else: feedback_parts.append(f"[T5] 욕설/비속어 포함: '{t5_output}' (감점 요소)")
 
         # 각 태스크 당 20점씩 부여 (총 5개 태스크)
         calculated_score = score_count * 20
@@ -269,21 +253,20 @@ def summarize_results(counsel_id):
 
 
         # summary 딕셔너리 구성 (counsel_summary 테이블용)
-        # T2 프롬프트에서 emotion, willingness, guided_method, situation_type, auto_transfer, virtual_account
-        # 필드를 명시적으로 요구하지 않으므로, 이 값들은 Ollama가 반환하지 않을 것입니다.
-        # 따라서 파싱된 결과에서 이 필드들을 직접 추출하는 것은 불가능합니다.
-        # 여기서는 해당 필드에 대한 기본값 ("판단불가" 또는 False)을 유지합니다.
+        # T2의 결과에서 직접 'emotion', 'willingness', 'situation', 'guided_method' 필드를 가져옵니다.
+        # 해당 필드가 없으면 기본값인 "판단불가"를 사용합니다.
+        t2_result = task_results.get("T2", {}) # T2 결과를 가져옴
         summary = {
             "counsel_id": str(counsel_id),
             "script_followed": t1_success,
-            "customer_emotion": "판단불가", # T2 프롬프트는 emotion을 요구하지 않음
-            "payment_willingness": "판단불가", # T2 프롬프트는 willingness를 요구하지 않음
-            "situation_type": "판단불가", # T2 프롬프트는 situation을 요구하지 않음
-            "auto_transfer_guided": False, # T2 프롬프트에서 이런 정보 요구 안 하므로 고정값
-            "virtual_account_guided": False, # T2 프롬프트에서 이런 정보 요구 안 하므로 고정값
+            "customer_emotion": t2_result.get("emotion", "판단불가"), # T2 결과에서 emotion 가져옴
+            "payment_willingness": t2_result.get("willingness", "판단불가"), # T2 결과에서 willingness 가져옴
+            "situation_type": t2_result.get("situation", "판단불가"), # T2 결과에서 situation 가져옴
+            "auto_transfer_guided": False,
+            "virtual_account_guided": False,
             "payment_positive_response": t3_success,
-            "guided_method": "판단불가", # T2 프롬프트에서 정보 요구 안 함
-            "overall_score": float(calculated_score), # counsel_summary는 Float 컬럼
+            "guided_method": t2_result.get("guided_method", "판단불가"), # T2 결과에서 guided_method 가져옴
+            "overall_score": float(calculated_score),
             "summary_comment": combined_feedback
         }
         print(f"[{datetime.now()}] [{counsel_id}] 요약 결과 생성: {summary}")
@@ -311,7 +294,7 @@ def summarize_results(counsel_id):
             print(traceback.format_exc())
 
 
-def build_dashboard_view(counsel_id):
+def build_dashboard_view(counsel_id, counselor_name="미정"):
     """집계 결과를 기반으로 화면용 대시보드 뷰 테이블을 생성합니다."""
     with engine.begin() as conn:
         existing = conn.execute(
@@ -334,7 +317,7 @@ def build_dashboard_view(counsel_id):
         # counsel_summary에서 직접 값을 가져옵니다.
         dashboard = {
             "datetime": datetime.now(timezone.utc),
-            "counselor": "미정", # 이 부분은 Java 백엔드에서 받아와야 할 정보입니다.
+            "counselor": counselor_name,
             "counsel_id": str(counsel_id),
             "미납안내_여부": row.script_followed,
             "납부유도_여부": row.payment_positive_response,
@@ -362,16 +345,17 @@ def analyze_consultation_api():
 
     counsel_id = data.get("counsel_id")
     raw_text = data.get("raw_text")
+    counselor_name = data.get("counselor_name", "미정")
 
     if not counsel_id or not raw_text:
         print(f"[{datetime.now()}] [API Call] Error: Missing counsel_id or raw_text.")
         return jsonify({"status": "error", "message": "counsel_id와 raw_text는 필수입니다."}), 400
 
-    print(f"[{datetime.now()}] [API Call] Starting analysis for counsel_id: {counsel_id}")
+    print(f"[{datetime.now()}] [API Call] Starting analysis for counsel_id: {counsel_id}, counselor: {counselor_name}")
     try:
-        analyze_dialogue_and_save(counsel_id, raw_text) # 이 함수가 모든 분석 및 저장 과정을 실행
-        summarize_results(counsel_id) # summarize_results와 build_dashboard_view는 analyze_dialogue_and_save 외부에서 호출해야 함
-        build_dashboard_view(counsel_id)
+        analyze_dialogue_and_save(counsel_id, raw_text)
+        summarize_results(counsel_id)
+        build_dashboard_view(counsel_id, counselor_name)
 
         print(f"[{datetime.now()}] [API Call] Analysis pipeline completed for counsel_id: {counsel_id}")
         return jsonify({"status": "success", "message": f"상담 ID {counsel_id} 분석 완료 및 DB 저장"}), 200

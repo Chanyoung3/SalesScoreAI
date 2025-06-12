@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com.example.backend.repository.CounselorRepository;
 
 import java.io.IOException;
 
@@ -26,14 +26,16 @@ public class ConsultationService {
     private final ConsultationRepository consultationRepository; // 상담 데이터 접근을 위한 리포지토리
     // private final OllamaAiService ollamaAiService; // Ollama AI 서비스 (AI 분석 요청)
     private final PythonAnalysisService pythonAnalysisService; // 새로 정의할 파이썬 분석 서비스
+    private final CounselorRepository counselorRepository;
 
     // 상담 내용을 저장할 파일 디렉토리 경로 (프로젝트 루트에 'uploads' 폴더 생성)
     private final String UPLOAD_DIR = "./uploads/";
 
     @Autowired
-    public ConsultationService(ConsultationRepository consultationRepository, PythonAnalysisService pythonAnalysisService) {
+    public ConsultationService(ConsultationRepository consultationRepository, PythonAnalysisService pythonAnalysisService,CounselorRepository counselorRepository) {
         this.consultationRepository = consultationRepository;
         this.pythonAnalysisService = pythonAnalysisService; // PythonAnalysisService 주입
+        this.counselorRepository = counselorRepository;
         try {
             Files.createDirectories(Paths.get(UPLOAD_DIR));
             logger.info("Upload directory created or already exists: {}", UPLOAD_DIR);
@@ -44,12 +46,12 @@ public class ConsultationService {
 
     // 상담 내용을 업로드하고 Ollama AI로 분석을 요청하는 메서드
     public Consultation uploadConsultation(Long counselorId, String customerInfo, MultipartFile file) throws Exception {
-        // 1. 업로드된 파일을 서버에 저장
+        // 업로드된 파일을 서버에 저장
         String filePath = saveFile(file); // 파일 저장 경로 반환
         // 파일의 내용을 문자열로 읽어온다. (AI 분석에 사용)
         String rawContent = new String(file.getBytes());
 
-        // 2. Consultation (상담) 객체를 생성하고 기본 정보를 설정
+        // Consultation (상담) 객체를 생성하고 기본 정보를 설정
         Consultation consultation = new Consultation();
         consultation.setCounselorId(counselorId); // 상담사 ID 설정
         // 현재 날짜와 시간을 "YYYY-MM-DD HH:mm:ss" 형식으로 포매팅하여 설정
@@ -58,34 +60,29 @@ public class ConsultationService {
         consultation.setTranscriptFilePath(filePath); // 저장된 파일 경로 설정
         consultation.setRawTranscriptContent(rawContent); // 원본 상담 내용 텍스트 저장
 
-//        // 3. Ollama AI 분석 요청:
-//        // **[올라마 프롬프트 담당자 연동 필요]**:
-//        logger.info("상담 내용을 Ollama AI에 분석 요청 중...");
-//        OllamaAiService.OllamaAnalysisResult analysisResult = ollamaAiService.analyzeConsultation(rawContent);
-//        logger.info("Ollama AI 분석 완료. 점수: {}, 피드백: {}", analysisResult.getScore(), analysisResult.getFeedback());
-
-        // 4. Ollama AI 분석 결과를 Consultation 객체에 설정합니다.
+        // Ollama AI 분석 결과를 Consultation 객체에 설정합니다.
         consultation.setOllamaScore(null);
         consultation.setOllamaFeedback(null);
 
         // 데이터베이스에 먼저 저장하여 ID를 할당받습니다.
         Consultation savedConsultation = consultationRepository.save(consultation);
 
+        // --- 상담사 이름 조회 ---
+        String counselorName = counselorRepository.findById(counselorId) // counselorId로 상담사 조회
+                .map(c -> c.getName()) // 상담사 객체에서 이름(name)을 추출
+                .orElse("미정"); // 이름을 찾지 못하면 기본값 "미정"
+
         // 파이썬 분석 서비스에 분석 요청 (비동기 처리)
-        // Python 서비스에 전달할 상담 ID와 원본 텍스트를 준비합니다.
         logger.info("파이썬 분석 서비스에 상담 ID {} 분석 요청 중...", savedConsultation.getId());
         try {
             // 파이썬 서비스는 비동기로 분석을 수행하고, 완료되면 DB를 업데이트할 것입니다.
             // 여기서는 응답을 기다리지 않고 요청만 보냅니다.
             // 필요한 경우 PythonAnalysisService의 analyzeConsultation 메서드가 Promise/CompletableFuture 등을 반환하도록 할 수 있습니다.
-            pythonAnalysisService.analyzeConsultation(savedConsultation.getId(), rawContent);
+            pythonAnalysisService.analyzeConsultation(savedConsultation.getId(), rawContent, counselorName);
             logger.info("파이썬 분석 서비스 요청 완료. (비동기 처리)");
         } catch (Exception e) {
             logger.error("파이썬 분석 서비스 호출 중 오류 발생: {}", e.getMessage(), e);
-            // 오류 발생 시에도 일단 상담 정보는 저장되었으므로, 프론트엔드에는 성공 응답을 줄 수 있습니다.
-            // 다만 분석 실패를 표시할 수 있도록 추가적인 처리가 필요할 수 있습니다.
         }
-
         // 프론트엔드에는 초기 저장된 Consultation 객체를 반환 (점수/피드백은 아직 NULL)
         return savedConsultation;
     }

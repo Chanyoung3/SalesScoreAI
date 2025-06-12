@@ -24,11 +24,11 @@ public class DashboardRepository {
         dashboard.setDatetime(rs.getString("datetime"));
         dashboard.setCounselor(rs.getString("counselor"));
         dashboard.setCounselId(rs.getString("counsel_id"));
-        dashboard.setOverdueGuidanceStatus(rs.getBoolean("미납안내_여부")); // 한글 컬럼명 직접 사용
-        dashboard.setPaymentInducementStatus(rs.getBoolean("납부유도_여부")); // 한글 컬럼명 직접 사용
-        dashboard.setInducementMethod(rs.getString("유도_방식")); // 한글 컬럼명 직접 사용
-        dashboard.setCustomerResponse(rs.getString("고객_반응")); // 한글 컬럼명 직접 사용
-        dashboard.setOverallJudgment(rs.getString("종합_판단")); // 한글 컬럼명 직접 사용
+        dashboard.setOverdueGuidanceStatus(rs.getBoolean("미납안내_여부"));
+        dashboard.setPaymentInducementStatus(rs.getBoolean("납부유도_여부"));
+        dashboard.setInducementMethod(rs.getString("유도_방식"));
+        dashboard.setCustomerResponse(rs.getString("고객_반응"));
+        dashboard.setOverallJudgment(rs.getString("종합_판단"));
         return dashboard;
     };
 
