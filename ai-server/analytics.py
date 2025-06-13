@@ -15,22 +15,19 @@ from sqlalchemy.dialects import mysql
 from flask import Flask, request, jsonify
 from sqlalchemy import Integer # Integer 타입 임포트 (consultations_java.id를 위해)
 
-
 # --- 설정 ---
 PROMPT_DIR = Path("prompt") # prompt 파일이 있는 경로
-MODEL_NAME = "llama3.1:8b" # Ollama 모델 이름. (만약 '3.1:8b' 사용 시 주석 해제 후 변경)
+MODEL_NAME = "llama3.1:8b" # Ollama 모델 이름
 
 # DB_PATH: MySQL 데이터베이스 연결 문자열
-# 여기를 'ollama_counseling_db'로 통일하거나, 'salesscoreai_db'가 실제로 생성되었는지 확인하세요.
-DB_PATH = "mysql+pymysql://ollama_user:A6$TMTR=-g!t@localhost:3306/salesscoreai_db?charset=utf8mb4" # <-- DB 이름 통일 권장!
+DB_PATH = "mysql+pymysql://ollama_user:A6$TMTR=-g!t@localhost:3306/salesscoreai_db?charset=utf8mb4"
 
 app = Flask(__name__)
-
 engine = create_engine(DB_PATH, echo=False, future=True)
 metadata = MetaData()
 
 
-# --- 테이블 정의 (이전과 동일) ---
+# --- 테이블 정의 ---
 counsel_analysis_raw = Table(
     "counsel_analysis_raw", metadata,
     Column("counsel_id", String(50)),
@@ -53,7 +50,16 @@ counsel_summary = Table(
     Column("payment_positive_response", Boolean),
     Column("guided_method", String(50)),
     Column("overall_score", Float),
-    Column("summary_comment", Text)
+    Column("summary_comment", Text),
+    Column("first_impression_score", Float),   # 첫인사 점수 (1-5)
+    Column("identity_verification_score", Float), # 본인확인 점수 (1-5)
+    Column("mandatory_info_score", Float),    # 필수안내 점수 (1-5)
+    Column("closing_greeting_score", Float),  # 끝인사 점수 (1-5)
+    Column("is_misguidance", Boolean),        # 오안내 여부 (T4_output 기반)
+    Column("is_forbidden_phrases", Boolean),  # 금지문구 여부 (T4_output 기반)
+    Column("is_illegal_collection", Boolean), # 불법추심 여부 (T5_output 기반)
+    Column("is_civil_complaint", Boolean),    # 민원성 여부 (T10_output 기반)
+    Column("is_willing_to_pay", Boolean)      # 납부의사 여부 (T2_output 기반 - True/False)
 )
 
 counsel_dashboard_view = Table(
@@ -74,12 +80,15 @@ consultations_java = Table(
     Column("id", Integer, primary_key=True),
     Column("ollama_score", Integer),
     Column("ollama_feedback", Text),
+    Column("consultation_date", DateTime),
+    Column("customer_info", String(50)),
+    Column("counselor_id", Integer),
     extend_existing=True
 )
 
 
 # --- 프롬프트 호출 (Ollama 직접 호출) ---
-TASK_CODES = ["T1", "T2", "T3", "T4", "T5"]
+TASK_CODES = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10"]
 
 def load_prompt(task_code):
     """지정된 태스크 코드에 해당하는 프롬프트 텍스트 파일을 로드합니다."""
@@ -113,11 +122,25 @@ def try_parse_json(text):
     """주어진 텍스트를 JSON으로 파싱을 시도합니다."""
     try:
         parsed_data = json.loads(text)
+        # JSON 파싱에 성공했더라도 'output' 필드가 없으면 경고하고 전체 텍스트를 output으로 할당
+        if "output" not in parsed_data:
+            print(f"[{datetime.now()}] [JSON Parse] 경고: 파싱 성공했으나 'output' 필드 없음. 전체 텍스트를 output으로 할당. 원본: '{text[:100]}...'")
+            parsed_data["output"] = text.strip() # 전체 응답을 output으로 넣어둡니다.
         return parsed_data
     except (json.JSONDecodeError, ValueError, TypeError) as e:
         print(f"[{datetime.now()}] [JSON Parse] 파싱 실패: {e}. 원본 텍스트: '{text[:100]}...'")
-        # Ollama가 JSON을 반환하지 않을 때, "output" 필드에 원본 텍스트를 할당합니다.
-        return {"parse_error": True, "raw_text": text, "output": text.strip()}
+        import re
+        output_pattern = re.compile(r'"output"\s*:\s*"(.*?)(?<!\\)"', re.DOTALL)
+        match = output_pattern.search(text)
+        extracted_output = ""
+        if match:
+            extracted_output = match.group(1).replace('\\"', '"')
+            print(f"[{datetime.now()}] [JSON Parse] 'output' 패턴 발견: '{extracted_output[:50]}...'")
+        else:
+            print(f"[{datetime.now()}] [JSON Parse] 'output' 패턴 미발견. 원본 텍스트 전체를 'output'으로 할당.")
+            extracted_output = text.strip() # 패턴 못 찾으면 전체 텍스트를 output으로
+
+        return {"parse_error": True, "raw_text": text, "output": extracted_output}
     except Exception as e:
         print(f"[{datetime.now()}] [JSON Parse] 기타 오류: {e}. 원본 텍스트: '{text[:100]}...'")
         return {"parse_error": True, "raw_text": text, "output": text.strip()}
@@ -128,27 +151,15 @@ def analyze_dialogue_and_save(counsel_id, dialogue):
     """
     제공된 대화 텍스트를 Ollama AI로 분석하고, 그 결과를 DB에 저장합니다.
     """
-    # 각 태스크별 결과 (parsed_json_result)를 임시로 저장할 딕셔너리
-    # 이 딕셔너리가 다음 summarize_results 함수로 전달될 때 사용됩니다.
-    task_results_for_summary = {}
-
-    for task_code in TASK_CODES:
+    for task_code in TASK_CODES: # TASK_CODES 전체를 반복
         prompt_template = load_prompt(task_code)
         formatted_prompt = prompt_template.replace("{input}", dialogue)
 
         result_text = query_ollama_local(formatted_prompt, MODEL_NAME)
 
-        # parsed_json_result 변수는 항상 try_parse_json의 결과로 초기화됩니다.
-        # result_text가 비어있어도 try_parse_json은 {"output": "", "parse_error": True}를 반환합니다.
         parsed_json_result = try_parse_json(result_text)
 
-        # --- 이전 오류의 직접적인 원인 (정의 전 사용) 해결 ---
-        # print(f"Parsed JSON for {counsel_id}-{task_code}: {parsed_json}") # <-- 이 라인 삭제 또는 주석 처리 (아래로 옮김)
-
-        print(f"[{datetime.now()}] Parsed JSON for {counsel_id}-{task_code}: {parsed_json_result}") # <-- 변수 정의 후 출력
-
-        # 결과를 task_results_for_summary에 저장 (이후 summarize_results에서 사용)
-        task_results_for_summary[task_code] = parsed_json_result
+        print(f"[{datetime.now()}] Parsed JSON for {counsel_id}-{task_code}: {parsed_json_result}")
 
         with engine.begin() as conn:
             existing = conn.execute(
@@ -175,10 +186,6 @@ def analyze_dialogue_and_save(counsel_id, dialogue):
                 evaluated_at=datetime.now(timezone.utc)
             ))
         print(f"[{datetime.now()}] [{counsel_id}] - {task_code} 완료.")
-
-    # 모든 태스크 분석 후, summarize_results와 build_dashboard_view를 호출
-    # 이 함수들은 이제 task_results_for_summary를 직접 파라미터로 받지 않고
-    # DB에서 데이터를 다시 조회하므로, 별도로 전달할 필요 없음.
 
 
 def summarize_results(counsel_id):
@@ -211,8 +218,6 @@ def summarize_results(counsel_id):
                 task_results[task_code] = current_result_json
 
         # --- 점수 계산 로직 (T1-T5 중 몇 개 성공했는지) ---
-        # 프롬프트는 JSON을 반환하지 않고 "output" 필드만 포함하는 텍스트 응답을 가정합니다.
-        # 각 태스크의 "output" 필드 값이 "NA"가 아니면 성공으로 간주합니다.
         score_count = 0
         feedback_parts = []
 
@@ -265,28 +270,40 @@ def summarize_results(counsel_id):
         t2_willingness = task_results.get("T2", {}).get("willingness", "").strip()
         is_willing_to_pay = (t2_willingness.lower() == "높음") # "높음"일 경우만 True로 판단
 
+        # T6-T9 항목별 스크립트 점수
+        first_impression_score = task_results.get("T6", {}).get("score", 0.0)
+        identity_verification_score = task_results.get("T7", {}).get("score", 0.0)
+        mandatory_info_score = task_results.get("T8", {}).get("score", 0.0)
+        closing_greeting_score = task_results.get("T9", {}).get("score", 0.0)
+
+        # T10 민원성 여부
+        is_civil_complaint_val = task_results.get("T10", {}).get("is_civil_complaint", False) # T10에서 직접 Boolean 값 가져옴
+
         # summary 딕셔너리 구성 (counsel_summary 테이블용)
-        # T2의 결과에서 직접 'emotion', 'willingness', 'situation', 'guided_method' 필드를 가져옵니다.
         # 해당 필드가 없으면 기본값인 "판단불가"를 사용합니다.
-        t2_result = task_results.get("T2", {}) # T2 결과를 가져옴
+        t2_result = task_results.get("T2", {})
         summary = {
-                "counsel_id": str(counsel_id),
-                "script_followed": t1_success, # 기존 유지 (스크립트 준수 여부)
-                "customer_emotion": task_results.get("T2", {}).get("emotion", "판단불가"),
-                "payment_willingness": task_results.get("T2", {}).get("willingness", "판단불가"), # 원래 string 값 유지
-                "situation_type": task_results.get("T2", {}).get("situation", "판단불가"),
-                "auto_transfer_guided": False,
-                "virtual_account_guided": False,
-                "payment_positive_response": t3_success, # 기존 유지 (납부 긍정 응답 여부)
-                "guided_method": task_results.get("T2", {}).get("guided_method", "판단불가"),
-                "overall_score": float(calculated_score),
-                "summary_comment": combined_feedback,
-                # --- 새로운 필드 추가 ---
-                "is_misguidance": is_misguidance, # 오안내 여부
-                "is_forbidden_phrases": is_forbidden_phrases, # 금지문구 여부
-                "is_illegal_collection": is_illegal_collection, # 불법추심 여부
-                "is_willing_to_pay": is_willing_to_pay # 납부의사 여부
-                }
+            "counsel_id": str(counsel_id),
+            "script_followed": t1_success,
+            "customer_emotion": t2_result.get("emotion", "판단불가"),
+            "payment_willingness": t2_result.get("willingness", "판단불가"), # T2 결과에서 직접 가져옴
+            "situation_type": t2_result.get("situation", "판단불가"),
+            "auto_transfer_guided": False,
+            "virtual_account_guided": False,
+            "payment_positive_response": t3_success,
+            "guided_method": t2_result.get("guided_method", "판단불가"),
+            "overall_score": float(calculated_score),
+            "summary_comment": combined_feedback,
+            "first_impression_score": float(first_impression_score),
+            "identity_verification_score": float(identity_verification_score),
+            "mandatory_info_score": float(mandatory_info_score),
+            "closing_greeting_score": float(closing_greeting_score),
+            "is_misguidance": is_misguidance,
+            "is_forbidden_phrases": is_forbidden_phrases,
+            "is_illegal_collection": is_illegal_collection,
+            "is_civil_complaint": is_civil_complaint_val, # T10 결과
+            "is_willing_to_pay": is_willing_to_pay # T2 willingness 기반 (재정의된 Boolean)
+        }
         print(f"[{datetime.now()}] [{counsel_id}] 요약 결과 생성: {summary}")
 
         # 요약 결과를 DB에 저장
@@ -296,7 +313,7 @@ def summarize_results(counsel_id):
         # --- Java consultations 테이블 업데이트 ---
         try:
             java_consultation_id = int(counsel_id)
-            java_overall_score = int(calculated_score) # consultations_java는 Integer 컬럼
+            java_overall_score = int(calculated_score)
             java_summary_comment = combined_feedback
 
             conn.execute(
@@ -325,13 +342,13 @@ def build_dashboard_view(counsel_id, counselor_name="미정"):
             return
 
         row_summary = conn.execute(
-        counsel_summary.select().where(counsel_summary.c.counsel_id == str(counsel_id))).fetchone()
+            counsel_summary.select().where(counsel_summary.c.counsel_id == str(counsel_id))).fetchone()
         if not row_summary:
             print(f"[{datetime.now()}] [{counsel_id}] 요약 데이터 없음. 대시보드 생성 불가.")
             return
         # --- consultations 테이블에서 정보 가져오기 ---
         row_consultation = conn.execute(
-        consultations_java.select().where(consultations_java.c.id == int(counsel_id))).fetchone()
+            consultations_java.select().where(consultations_java.c.id == int(counsel_id))).fetchone()
         if not row_consultation:
             print(f"[{datetime.now()}] [{counsel_id}] consultations 데이터 없음. 대시보드 생성 불가.")
             return
@@ -339,16 +356,16 @@ def build_dashboard_view(counsel_id, counselor_name="미정"):
         # 대시보드 데이터 구성
         # counsel_summary에서 직접 값을 가져옵니다.
         dashboard = {
-                "datetime": row_consultation.consultation_date, # 상담일자 (consultations에서)
-                "customer_info": row_consultation.customer_info, # 고객번호 (consultations에서)
-                "counselor_id": row_consultation.counselor_id, # 상담사번호 (consultations에서)
-                "counsel_id": str(counsel_id), # Call번호 (counsel_summary와 동일한 ID)
-                "overall_score": row_summary.overall_score, # Score (counsel_summary에서)
-                "misguidance_status": row_summary.is_misguidance, # 오안내 (새로운 필드)
-                "forbidden_phrases_status": row_summary.is_forbidden_phrases, # 금지문구 (새로운 필드)
-                "illegal_collection_status": row_summary.is_illegal_collection, # 불법추심 (새로운 필드)
-                "payment_intention_status": row_summary.is_willing_to_pay # 납부의사 (새로운 필드)
-                }
+            "datetime": row_consultation.consultation_date, # 상담일자 (consultations에서)
+            "customer_info": row_consultation.customer_info, # 고객번호 (consultations에서)
+            "counselor_id": row_consultation.counselor_id, # 상담사번호 (consultations에서)
+            "counsel_id": str(counsel_id), # Call번호 (counsel_summary와 동일한 ID)
+            "overall_score": row_summary.overall_score, # Score (counsel_summary에서)
+            "misguidance_status": row_summary.is_misguidance, # 오안내 (새로운 필드)
+            "forbidden_phrases_status": row_summary.is_forbidden_phrases, # 금지문구 (새로운 필드)
+            "illegal_collection_status": row_summary.is_illegal_collection, # 불법추심 (새로운 필드)
+            "payment_intention_status": row_summary.is_willing_to_pay # 납부의사 (새로운 필드)
+        }
 
         # 대시보드 뷰 DB에 저장
         conn.execute(counsel_dashboard_view.insert().values(**dashboard))
