@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import Consultations from "./consultations";
 import "../css/Login.css";
@@ -13,6 +13,15 @@ function Login({ onLogin }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.body.classList.add("login-body");
+
+    return () => {
+      document.body.classList.remove("login-body");
+    };
+  }, []);
+
+  
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
@@ -31,7 +40,7 @@ function Login({ onLogin }) {
           navigate("/consultations");
         }
       })
-        
+
       .catch(() => {
         setOpen(true);
       });
@@ -49,39 +58,38 @@ function Login({ onLogin }) {
     return <Consultations logOut={handleLogout} user={user} />;
   } else {
     return (
-      <div className="login-container">
-      <h2>로그인</h2>
-      <form onSubmit={handleLogin}>
-        <div className="form-row">
-          <label>아이디</label>
-          <input
-            type="text"
-            name="username"
-            value={user.username}
-            onChange={handleChange}
-          />
+      <div className="login-background">
+        <div className="login-container">
+          <h2>로그인</h2>
+          <form onSubmit={handleLogin}>
+            <div className="form-row">
+              <label>아이디</label>
+              <input
+                type="text"
+                name="username"
+                value={user.username}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="form-row">
+              <label>비밀번호</label>
+              <input
+                type="password"
+                name="password"
+                value={user.password}
+                onChange={handleChange}
+              />
+            </div>
+            {open && (
+              <p style={{ color: 'red' }}>
+                로그인 실패. 아이디와 비밀번호를 확인하세요.
+              </p>
+            )}
+            <button className="button" type="submit">로그인</button>
+            <button className="signbutton" onClick={() => navigate("/register")}>회원가입</button>
+          </form>
         </div>
-        <div className="form-row">
-          <label>비밀번호</label>
-          <input
-            type="password"
-            name="password"
-            value={user.password}
-            onChange={handleChange}
-          />
-        </div>
-        <br />
-        <button className="button" type="submit">로그인</button>
-      </form>
-      <br />
-      <button className="signbutton" onClick={() => navigate("/register")}>회원가입</button>
-      {open && (
-        <p style={{ color: 'red' }}>
-          로그인 실패. 아이디와 비밀번호를 확인하세요.
-        </p>
-      )}
-    </div>
-    
+      </div>
     );
   }
 }

@@ -75,4 +75,10 @@ public class ConsultationController {
         // HTTP 200 OK 상태 코드와 함께 상담 목록을 반환
         return ResponseEntity.ok(consultations);
     }
+
+    @PostMapping("/detail")
+    public ResponseEntity<List<Consultation>> getConsultationDetails(){
+        List<Consultation> consultations = consultationService.getAllConsultations();
+        return ResponseEntity.ok(consultations);
+    }
 }

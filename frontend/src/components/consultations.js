@@ -3,6 +3,7 @@ import { DateRangePicker } from '@mui/x-date-pickers-pro/DateRangePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DataGrid } from "@mui/x-data-grid";
+import { startOfMonth, parseISO, isBefore, isAfter } from 'date-fns';
 import ko from 'date-fns/locale/ko';
 import React, { useEffect, useState } from "react";
 import Detail from './detail';
@@ -13,44 +14,45 @@ import axios from 'axios';
 
 function Consultations({ logOut }) {
   const [searchText, setSearchText] = useState("");
-  const [dateRange, setDateRange] = useState([null, null]);
-  const [valid, setValid] = useState("ALL");
+  const [dateRange, setDateRange] = useState([
+    startOfMonth(new Date()),  // 시작일: 이번달 1일
+    new Date()                 // 종료일: 오늘
+  ]);
+
   const [misguide, setMisguide] = useState("ALL");
   const [bannedWords, setBannedWords] = useState("ALL");
   const [illegalCollection, setIllegalCollection] = useState("ALL");
   const [paymentIntention, setPaymentIntention] = useState("ALL");
   const [openPopup, setOpenPopup] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
-  
-  /*
-  const data = [
-    { id: 1, date: "20250401", cnumber: "01067783418", agentId: "5250023", callId: "CALL-1234", valid: "유효", scriptScore: 15, misguide: "N", bannedWords: "N", illegalCollection: "N", paymentIntention: "Y" },
-    { id: 2, date: "20250401", cnumber: "01082216452", agentId: "5250023", callId: "CALL-1235", valid: "유효", scriptScore: 18, misguide: "Y", bannedWords: "Y", illegalCollection: "N", paymentIntention: "N" },
-    { id: 3, date: "20250401", cnumber: "01029477196", agentId: "5250018", callId: "CALL-1236", valid: "유효", scriptScore: 20, misguide: "N", bannedWords: "N", illegalCollection: "Y", paymentIntention: "Y" },
-    { id: 4, date: "20250401", cnumber: "01093590056", agentId: "5250018", callId: "CALL-1237", valid: "유효", scriptScore: 20, misguide: "N", bannedWords: "N", illegalCollection: "Y", paymentIntention: "Y" }
-  ];
-*/
+
+  const booleanFormatter = (params) => {
+    if (params === null || params === undefined) return "-";
+    if (params === true) return "Y";
+    if (params === false) return "N";
+    return "-";
+  };
+
   // 컬럼
   const columns = [
-    { field: "date", headerName: "상담일자", flex: 1, disableColumnMenu: true },
-    { field: "cnumber", headerName: "고객번호", flex: 1, disableColumnMenu: true },
-    { field: "agentId", headerName: "상담사번호", flex: 1, sortable: false, disableColumnMenu: true },
-    { field: "callId", headerName: "Call 번호", flex: 1, sortable: false, disableColumnMenu: true },
-    { field: "valid", headerName: "유효 여부", flex: 1, sortable: false, disableColumnMenu: true },
-    { field: "scriptScore", headerName: "스크립트 Score", flex: 1, disableColumnMenu: true },
-    { field: "misguide", headerName: "오안내", flex: 1, sortable: false, disableColumnMenu: true },
-    { field: "bannedWords", headerName: "금지문구", flex: 1, sortable: false, disableColumnMenu: true },
-    { field: "illegalCollection", headerName: "불법추심", flex: 1, sortable: false, disableColumnMenu: true },
-    { field: "paymentIntention", headerName: "납부의사", flex: 1, sortable: false, disableColumnMenu: true },
+    { field: "consultationDate", headerName: "상담일자", flex: 1, disableColumnMenu: true },
+    { field: "customerNumber", headerName: "고객번호", flex: 1, disableColumnMenu: true },
+    { field: "counselorNumber", headerName: "상담사번호", flex: 1, sortable: false, disableColumnMenu: true },
+    { field: "callNumber", headerName: "Call 번호", flex: 1, sortable: false, disableColumnMenu: true },
+    { field: "score", headerName: "스크립트 Score", flex: 1, disableColumnMenu: true },
+    { field: "misguidance", headerName: "오안내", flex: 1, sortable: false, disableColumnMenu: true, valueFormatter: booleanFormatter },
+    { field: "forbiddenPhrases", headerName: "금지문구", flex: 1, sortable: false, disableColumnMenu: true, valueFormatter: booleanFormatter },
+    { field: "illegalCollection", headerName: "불법추심", flex: 1, sortable: false, disableColumnMenu: true, valueFormatter: booleanFormatter },
+    { field: "paymentIntention", headerName: "납부의사", flex: 1, sortable: false, disableColumnMenu: true, valueFormatter: booleanFormatter },
   ];
 
   const [data, setData] = useState([]);
 
   useEffect(() => {
     axios
-      .get(`${process.env.REACT_APP_API_URL}/consultations/`)
+      .get(`${process.env.REACT_APP_API_URL}/dashboard`)
       .then((res) => {
-        setData(res.data); // 받아온 데이터 저장
+        setData(res.data);
       })
       .catch((err) => {
         console.error("데이터 불러오기 실패", err);
@@ -58,16 +60,51 @@ function Consultations({ logOut }) {
   }, []);
 
   const handleSearch = async () => {
-    const searchParams = {
-      id: 'CALL-1234',
-      bannedWords: 'Y',
-      valid: 'Y',
-    };
+    const counselorId = searchText.trim();
   
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/consultations/search`, { params: searchParams });
-      setData(res.data);
+      let res;
+      if (counselorId) {
+        res = await axios.get(`${process.env.REACT_APP_API_URL}/dashboard/counselor_id/${counselorId}`);
+      } else {
+        res = await axios.get(`${process.env.REACT_APP_API_URL}/dashboard`);
+      }
+  
+      // 응답 통일: 배열 형태로 변환
+      const responseData = Array.isArray(res.data) ? res.data : [res.data];
+  
+      console.log("서버 응답 데이터:", responseData);
+  
+      const filteredData = responseData.filter(item => {
+        const consultationDate = new Date(item.consultationDate);
+        const startDate = dateRange[0];
+        const endDate = dateRange[1];
+  
+        // 날짜 범위 필터링
+        const isInDateRange =
+          (!startDate || !isBefore(consultationDate, startDate)) &&
+          (!endDate || !isAfter(consultationDate, endDate));
+  
+        // boolean 필터링 헬퍼 함수
+        const matchesBooleanFilter = (fieldValue, filterValue) => {
+          if (filterValue === "ALL") return true;
+          if (filterValue === "Y") return fieldValue === true;
+          if (filterValue === "N") return fieldValue === false;
+          return true;
+        };
+  
+        // 각 boolean 필터 조건 체크
+        const isMisguideOk = matchesBooleanFilter(item.misguidance, misguide);
+        const isBannedWordsOk = matchesBooleanFilter(item.forbiddenPhrases, bannedWords);
+        const isIllegalCollectionOk = matchesBooleanFilter(item.illegalCollection, illegalCollection);
+        const isPaymentIntentionOk = matchesBooleanFilter(item.paymentIntention, paymentIntention);
+  
+        return isInDateRange && isMisguideOk && isBannedWordsOk && isIllegalCollectionOk && isPaymentIntentionOk;
+      });
+  
+      setData(filteredData);
     } catch (e) {
+      console.error("검색 중 오류 발생:", e);
       alert('검색 중 오류 발생');
     }
   };
@@ -79,7 +116,7 @@ function Consultations({ logOut }) {
         <Header />
         <Box sx={{ display: "flex", flexGrow: 1, height: "calc(100vh - 64px)", width: "100%" }} >
           <Box sx={{ width: "280px", flexShrink: 0 }}>
-            <Sidebar logOut={logOut}/>
+            <Sidebar logOut={logOut} />
           </Box>
           <Box sx={{ flexGrow: 1, p: 2, overflowY: "auto" }}>
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
@@ -122,13 +159,6 @@ function Consultations({ logOut }) {
                 <Box mt={2} borderTop={1} pt={2}>
                   <Grid container spacing={2} justifyContent="center">
                     <Grid item xs={6}>
-                      <FormLabel>유효여부</FormLabel>
-                      <RadioGroup row value={valid} onChange={(e) => setValid(e.target.value)}>
-                        <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
-                        <FormControlLabel value="Y" control={<Radio />} label="Y" />
-                        <FormControlLabel value="N" control={<Radio />} label="N" />
-                      </RadioGroup>
-
                       <FormLabel>금지문구</FormLabel>
                       <RadioGroup row value={bannedWords} onChange={(e) => setBannedWords(e.target.value)}>
                         <FormControlLabel value="ALL" control={<Radio />} label="ALL" />
@@ -167,10 +197,11 @@ function Consultations({ logOut }) {
                 </Box>
               </Box>
 
-              <Box mt={2} sx={{ height: 400, width: "100%" }}>
+              <Box mt={2} sx={{ height: 730, width: "100%" }}>
                 <DataGrid
                   rows={data}
                   columns={columns}
+                  getRowId={(row) => row.callNumber}  // 또는 고유값 사용 (ex: row.customerNumber 등)
                   disableRowSelectionOnClick
                   onRowClick={(params) => {
                     setSelectedRow(params.row);

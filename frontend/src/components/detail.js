@@ -36,7 +36,7 @@ function Script({ identityInfo }){
       </>
   );
 }
-
+/*
 function ScriptTable(){
   const rowData = [
     { label: '이중출금 안내', result: '해당사항없음' },
@@ -98,7 +98,7 @@ function ScriptTable(){
     </>
   );
 }
-
+*/
 function RestScript(){
   const categories = [
     {
@@ -122,8 +122,7 @@ function RestScript(){
     {
       title: '금지문구',
       items: [
-        { text: '욕설', value: 'Y' },
-        { text: '비속어', value: 'N' },
+        { text: '욕설 / 비속어', value: 'Y' },
       ],
     },
     {
@@ -195,7 +194,6 @@ function Detail() {
   return (
     <Box>
       <Script />
-      <ScriptTable />
       <RestScript />
     </Box>
   );

@@ -15,45 +15,52 @@ import '../App.css';
 function Evaluation({ logOut }) {
   const [searchText, setSearchText] = useState("");
   const [startDate, setStartDate] = useState(new Date());;
-  const data1 = [
-    { name: '대상자', value: 400 },
-    { name: '전체', value: 300 },
-  ];
-  const data2 = [
-    { name: '대상자', value: 400 },
-    { name: '전체', value: 300 },
-  ];
-  const data3 = [
-    { name: '대상자', value: 400 },
-    { name: '전체', value: 300 },
-  ];
-
 
   const handleMonthChange = (offset) => {
     const newDate = addMonths(startDate, offset);
     setStartDate(newDate);
   };
 
-  const tdata1 = [
-    { 항목: '첫인사', 대상자: 4, 전체: 4.25 },
-    { 항목: '본인확인', 대상자: 4.3, 전체: 4.38 },
-    { 항목: '필수안내', 대상자: 3.4, 전체: 3.92 },
-    { 항목: '끝인사', 대상자: 5, 전체: 4.44 },
-  ];
+  const dashboardData = {
+    pieCharts: {
+      data1: [
+        { name: '대상자', value: 400 },
+        { name: '전체', value: 300 },
+      ],
+      data2: [
+        { name: '대상자', value: 400 },
+        { name: '전체', value: 300 },
+      ],
+      data3: [
+        { name: '대상자', value: 400 },
+        { name: '전체', value: 300 },
+      ],
+    },
+    tables: {
+      tdata1: [
+        { 항목: '첫인사', 대상자: 4, 전체: 4.25 },
+        { 항목: '본인확인', 대상자: 4.3, 전체: 4.38 },
+        { 항목: '필수안내', 대상자: 3.4, 전체: 3.92 },
+        { 항목: '끝인사', 대상자: 5, 전체: 4.44 },
+      ],
+      tdata2: [
+        { 항목: '불법추심', 대상자: 0.18, 전체: 0.12 },
+        { 항목: '금지문구', 대상자: 0.46, 전체: 0.30 },
+        { 항목: '민원성', 대상자: 0.37, 전체: 0.38 },
+      ]
+    }
+  };
 
-  const tdata2 = [
-    { 항목: '불법추심', 대상자: 0.18, 전체: 0.12 },
-    { 항목: '금지문구', 대상자: 0.46, 전체: 0.30 },
-    { 항목: '민원성', 대상자: 0.37, 전체: 0.38 },
-  ];
+  // 파이차트 데이터
+  const data1 = dashboardData.pieCharts.data1;
+  const data2 = dashboardData.pieCharts.data2;
+  const data3 = dashboardData.pieCharts.data3;
+
+  // 테이블 데이터
+  const tdata1 = dashboardData.tables.tdata1;
+  const tdata2 = dashboardData.tables.tdata2;
 
   /*
-  const [data1, setData1] = useState([]);
-  const [data2, setData2] = useState([]);
-  const [data3, setData3] = useState([]);
-  const [tdata1, setData4] = useState([]);
-  const [tdata2, setData5] = useState([]);
-
   useEffect(() => {
     axios
       .post(`${process.env.REACT_APP_API_URL}/evaluation`)
@@ -69,14 +76,14 @@ function Evaluation({ logOut }) {
       });
   }, []);
   */
- 
+
   return (
     <>
-      <Box sx={{ width: "100%", margin: "0 auto", height: "100vh", display: "flex", flexDirection: "column"}} >
+      <Box sx={{ width: "100%", margin: "0 auto", height: "100vh", display: "flex", flexDirection: "column" }} >
         <Header />
         <Box sx={{ display: "flex", flexGrow: 1, height: "calc(100vh - 64px)", width: "100%" }} >
           <Box sx={{ width: "280px", flexShrink: 0 }}>
-            <Sidebar logOut={logOut}/>
+            <Sidebar logOut={logOut} />
           </Box>
           <Box sx={{ flexGrow: 1, p: 2, overflowY: "auto" }}>
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>

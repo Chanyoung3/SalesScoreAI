@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import "../css/Login.css"; // 기존 css 재활용
 import axios from 'axios';
@@ -14,7 +14,13 @@ function Register() {
 
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  useEffect(() => {
+    document.body.classList.add("login-body");
 
+    return () => {
+      document.body.classList.remove("login-body");
+    };
+  }, []);
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
@@ -88,17 +94,15 @@ function Register() {
             <option value="ADMIN">ADMIN</option>
           </select>
         </div>
-        <br />
-        <button className="button" type="submit">회원가입</button>
-      </form>
-      <br />
-      <button className="signbutton" onClick={() => navigate("/")}>로그인으로</button>
-
-      {open && (
+        {open && (
         <p style={{ color: 'red' }}>
           회원가입 실패. 입력 정보를 확인하세요.
         </p>
       )}
+      <br />
+        <button className="button" type="submit">회원가입</button>
+        <button className="signbutton" onClick={() => navigate("/")}>로그인으로</button>
+      </form>
     </div>
   );
 }
