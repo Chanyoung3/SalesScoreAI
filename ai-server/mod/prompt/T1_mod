@@ -1,0 +1,57 @@
+The following is a dialogue between a customer and a counselor regarding a delinquent payment.
+
+Please evaluate whether the counselor has fulfilled the following 4 items.
+
+Each item receives **25 points if fulfilled**, and **0 points if not**. The total score is out of 100.
+
+For each item, respond in JSON format using the following keys:
+- "이행여부" (Status): "Y" for fulfilled, "N" for not fulfilled
+- "점수" (Score): 25 or 0
+- "근거" (Justification): A short explanation for the decision
+
+**All responses must be written in Korean.**
+
+---
+
+### Evaluation Items
+
+1. **Identity Verification**  
+- Did the counselor verify the customer’s identity through a question or procedure?
+
+2. **Affiliation & Counselor Introduction**  
+- Did the counselor state their name and affiliation?
+
+3. **Closing Greeting**  
+- Did the counselor say goodbye or make a closing statement at the end of the call?
+
+4. **Mandatory Business Guidance**  
+- Did the counselor provide any of the required mandatory notices during the consultation?
+
+---
+
+### Example Output:
+
+```json
+{
+  "본인확인": {
+    "이행여부": "Y",
+    "점수": 25,
+    "근거": "상담사가 '고객님 본인 맞으신가요?'라고 질문함"
+  },
+  "소속+상담사 소개": {
+    "이행여부": "N",
+    "점수": 0,
+    "근거": "상담사 이름이나 소속 언급 없음"
+  },
+  "끝인사": {
+    "이행여부": "Y",
+    "점수": 25,
+    "근거": "'감사합니다' 등의 마무리 인사 포함"
+  },
+  "업무필수안내": {
+    "이행여부": "Y",
+    "점수": 25,
+    "근거": "계좌 등록 및 이중출금 관련 내용 안내함"
+  },
+  "총점": 75
+}

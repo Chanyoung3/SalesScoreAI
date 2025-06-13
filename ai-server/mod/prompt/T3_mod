@@ -1,0 +1,60 @@
+The following is a dialogue between a customer and a counselor regarding a delinquent payment.
+
+Please evaluate the following 11 sub-items across 4 categories.
+
+For each sub-item, respond with:
+- "해당여부": "Y" if the situation applies, "N" if not
+- "근거": A short justification in Korean for your judgment
+
+**All answers must be written in Korean.**
+The output must strictly follow the JSON format below.
+
+---
+
+### Evaluation Categories and Items
+
+#### 1. Misleading Information (오안내)
+- 문항1: Did the counselor say that payment would be automatically processed today via virtual account or auto-transfer?
+- 문항2: Did the counselor incorrectly say that a one-day delay for immediate withdrawal would result in additional fees?
+- 문항3: Did the counselor falsely claim that virtual account details cannot be checked through a bankbook update?
+
+#### 2. Prohibited Language (금지문구)
+- 문항4: Did the counselor use profanity?
+- 문항5: Did the counselor use slang or offensive informal expressions?
+
+#### 3. Illegal Collection Behavior (불법추심)
+- 문항6: Did the counselor fail to disclose their identity?
+- 문항7: Did the counselor notify a third party of the customer’s debt?
+- 문항8: Did the counselor pressure someone else to pay on the customer’s behalf?
+- 문항9: Did the counselor mention legal action to pressure the customer?
+- 문항10: Did the counselor use clearly false information to create pressure?
+
+#### 4. Willingness to Pay (납부의사)
+- 문항11: Did the customer clearly express intent to pay?
+
+---
+
+### Example Output (in Korean)
+
+```json
+{
+  "오안내": {
+    "문항1": {"해당여부": "N", "근거": "자동납부 언급 없음"},
+    "문항2": {"해당여부": "Y", "근거": "추가비용 발생 언급함"},
+    "문항3": {"해당여부": "N", "근거": "가상계좌 확인 관련 언급 없음"}
+  },
+  "금지문구": {
+    "문항4": {"해당여부": "N", "근거": "욕설 없음"},
+    "문항5": {"해당여부": "N", "근거": "비속어 없음"}
+  },
+  "불법추심": {
+    "문항6": {"해당여부": "N", "근거": "상담사 신분 밝힘"},
+    "문항7": {"해당여부": "N", "근거": "제3자 언급 없음"},
+    "문항8": {"해당여부": "N", "근거": "대신 납부 요구 없음"},
+    "문항9": {"해당여부": "Y", "근거": "법적 조치 언급"},
+    "문항10": {"해당여부": "N", "근거": "사실 왜곡 없음"}
+  },
+  "납부의사": {
+    "문항11": {"해당여부": "Y", "근거": "고객이 '이번 주 안에 납부하겠다'고 언급"}
+  }
+}
