@@ -1,0 +1,59 @@
+The following is a conversation between a customer and an agent regarding overdue payment.
+
+Please determine whether the agent provided the following **7 mandatory business guidance items**.
+
+For each item, evaluate the **status** using one of the following:
+- "이행": The agent clearly provided the guidance.
+- "누락": The item should have been mentioned but was not.
+- "해당사항없음": The item was not applicable in the context of the conversation.
+
+**Make sure the response is written in Korean.**
+For each item, provide the **"status"** and **"evidence"** in JSON format.
+
+---
+
+### Mandatory Business Guidance Items:
+
+1. Duplicate withdrawal guidance  
+2. Virtual account deposit deadline (11PM)  
+3. Notification of short-term delinquency registration date  
+4. Recording guidance for withdrawal consent and account change  
+5. Notice that a one-time immediate withdrawal is indeed one-time  
+6. When changing the payment date: notice of interest, effective date, and installment  
+7. When registering an account: effective date and bank notification
+
+---
+
+### Output Example:
+
+```json
+{
+  "1. 이중출금 안내": {
+    "상태": "해당사항없음",
+    "근거": "출금 관련 언급이 없었으며, 반복 출금 상황이 아님"
+  },
+  "2. 가상계좌 입금시간 안내 (오후 11시)": {
+    "상태": "누락",
+    "근거": "오후 11시 입금 마감 시간 안내가 없음"
+  },
+  "3. 단기연체등록일 통보": {
+    "상태": "이행",
+    "근거": "상담사가 단기연체 등록일을 명확히 안내함"
+  },
+  "4. 출금동의 및 계좌변경 녹취 안내": {
+    "상태": "누락",
+    "근거": "녹취 관련 안내가 없음"
+  },
+  "5. 1회성 즉시출금시 1회성임 안내": {
+    "상태": "해당사항없음",
+    "근거": "1회성 즉시 출금 언급이 없음"
+  },
+  "6. 결제일 변경 시 경과이자, 적용일자, 월할부금 안내": {
+    "상태": "이행",
+    "근거": "경과이자, 적용일자, 월할부금에 대해 설명함"
+  },
+  "7. 계좌 등록 시 적용일자 및 은행 문자 안내": {
+    "상태": "누락",
+    "근거": "계좌 등록 이후 은행 문자 관련 안내가 없음"
+  }
+}
