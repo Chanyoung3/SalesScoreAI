@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.DashboardViewResponse;
+import com.example.backend.dto.DashboardStatisticsResponse;
 import com.example.backend.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -40,5 +41,20 @@ public class DashboardController {
     public ResponseEntity<List<DashboardViewResponse>> getDashboardDataByCounselorId(@PathVariable Long counselorId) { // <-- 파라미터 Long 타입으로 변경
         List<DashboardViewResponse> data = dashboardService.getDashboardViewsByCounselorId(counselorId);
         return ResponseEntity.ok(data);
+    }
+
+    // 항목별 통계 데이터를 조회합니다. (특정 상담사 또는 전체)
+    @GetMapping("/statistics")
+    public ResponseEntity<DashboardStatisticsResponse> getDashboardStatistics(
+            @RequestParam(required = false) Long counselorId,
+            @RequestParam String yearMonth) {
+
+        DashboardStatisticsResponse response;
+        if (counselorId != null) {
+            response = dashboardService.getDashboardStatistics(counselorId, yearMonth);
+        } else {
+            response = dashboardService.getOverallDashboardStatistics(yearMonth);
+        }
+        return ResponseEntity.ok(response);
     }
 }
