@@ -58,14 +58,15 @@ counsel_summary = Table(
 
 counsel_dashboard_view = Table(
     "counsel_dashboard_view", metadata,
-    Column("datetime", DateTime),
-    Column("counselor", String(50)),
-    Column("counsel_id", String(50), primary_key=True),
-    Column("미납안내_여부", Boolean),
-    Column("납부유도_여부", Boolean),
-    Column("유도_방식", String(50)),
-    Column("고객_반응", String(50)),
-    Column("종합_판단", String(50))
+    Column("datetime", DateTime),         # 상담일자
+    Column("customer_info", String(50)), # 고객번호
+    Column("counselor_id", Integer),      # 상담사번호
+    Column("counsel_id", String(50), primary_key=True), # Call번호
+    Column("overall_score", Float),       # Score
+    Column("misguidance_status", Boolean), # 오안내 여부
+    Column("forbidden_phrases_status", Boolean), # 금지문구 여부
+    Column("illegal_collection_status", Boolean), # 불법추심 여부
+    Column("payment_intention_status", Boolean) # 납부의사 여부
 )
 
 consultations_java = Table(
@@ -199,7 +200,6 @@ def summarize_results(counsel_id):
                 )
             ).fetchone()
             if row and row.result_json:
-                # --- !!! 이 부분 추가: row.result_json이 문자열인 경우 다시 파싱 시도 !!! ---
                 current_result_json = row.result_json
                 if isinstance(current_result_json, str):
                     try:
@@ -208,8 +208,7 @@ def summarize_results(counsel_id):
                     except json.JSONDecodeError:
                         print(f"[{datetime.now()}] [DB Load] {counsel_id}-{task_code} result_json 재파싱 실패, 기본값 사용.")
                         current_result_json = {"parse_error": True, "output": "DB 로드 오류/비JSON"}
-                # --- 추가 로직 끝 ---
-                task_results[task_code] = current_result_json # 이제 딕셔너리 또는 오류 딕셔너리
+                task_results[task_code] = current_result_json
 
         # --- 점수 계산 로직 (T1-T5 중 몇 개 성공했는지) ---
         # 프롬프트는 JSON을 반환하지 않고 "output" 필드만 포함하는 텍스트 응답을 가정합니다.
@@ -220,72 +219,74 @@ def summarize_results(counsel_id):
         # T1: "안전한 신용관리바랍니다. 감사합니다" 문장 존재 여부
         t1_output = task_results.get("T1", {}).get("output", "").strip()
         t1_success = (t1_output != "NA" and t1_output != "")
-        if t1_success:
-            score_count += 1
-            feedback_parts.append(f"[T1] 종료 멘트 성공: '{t1_output}'")
-        else:
-            feedback_parts.append("[T1] 종료 멘트 실패: 해당 멘트 없음")
+        if t1_success: score_count += 1; feedback_parts.append(f"[T1] 종료 멘트 성공: '{t1_output}'")
+        else: feedback_parts.append("[T1] 종료 멘트 실패: 해당 멘트 없음")
 
         # T2: 고객 납부 의사 문장 존재 여부
         t2_output = task_results.get("T2", {}).get("output", "").strip()
         t2_success = (t2_output != "NA" and t2_output != "")
-        if t2_success:
-            score_count += 1
-            feedback_parts.append(f"[T2] 납부 의사 언급 성공: '{t2_output}'")
-        else:
-            feedback_parts.append("[T2] 납부 의사 언급 실패: 해당 멘트 없음")
+        if t2_success: score_count += 1; feedback_parts.append(f"[T2] 납부 의사 언급 성공: '{t2_output}'")
+        else: feedback_parts.append("[T2] 납부 의사 언급 실패: 해당 멘트 없음")
 
         # T3: 긍정 답변 존재 여부
         t3_output = task_results.get("T3", {}).get("output", "").strip()
         t3_success = (t3_output != "NA" and t3_output != "")
-        if t3_success:
-            score_count += 1
-            feedback_parts.append(f"[T3] 고객 긍정 답변 확인: '{t3_output}'")
-        else:
-            feedback_parts.append("[T3] 고객 긍정 답변 없음")
+        if t3_success: score_count += 1; feedback_parts.append(f"[T3] 고객 긍정 답변 확인: '{t3_output}'")
+        else: feedback_parts.append("[T3] 고객 긍정 답변 없음")
 
         # T4: "수고하세요" 포함 여부 (이 멘트가 없어야 점수)
         t4_output = task_results.get("T4", {}).get("output", "").strip()
-        t4_contains_discourtesy = (t4_output != "NA" and t4_output != "") # output이 있다면 '수고하세요'가 발견된 것
-        if not t4_contains_discourtesy: # '수고하세요'가 없으면 성공
-            score_count += 1
-            feedback_parts.append("[T4] '수고하세요' 멘트 없음: 성공")
-        else:
-            feedback_parts.append(f"[T4] '수고하세요' 멘트 포함: '{t4_output}'") # 있다면 피드백에만 포함
+        t4_contains_discourtesy = (t4_output != "NA" and t4_output != "")
+        if not t4_contains_discourtesy: score_count += 1; feedback_parts.append("[T4] '수고하세요' 멘트 없음: 성공")
+        else: feedback_parts.append(f"[T4] '수고하세요' 멘트 포함: '{t4_output}' (감점 요소)")
+
 
         # T5: 욕설/비속어 포함 여부 (이 멘트가 없어야 점수)
         t5_output = task_results.get("T5", {}).get("output", "").strip()
-        t5_contains_swear = (t5_output != "NA" and t5_output != "") # output이 있다면 욕설 발견된 것
-        if not t5_contains_swear: # 욕설/비속어가 없으면 성공
-            score_count += 1
-            feedback_parts.append("[T5] 욕설/비속어 없음: 성공")
-        else:
-            feedback_parts.append(f"[T5] 욕설/비속어 포함: '{t5_output}'") # 있다면 피드백에만 포함
+        t5_contains_swear = (t5_output != "NA" and t5_output != "")
+        if not t5_contains_swear: score_count += 1; feedback_parts.append("[T5] 욕설/비속어 없음: 성공")
+        else: feedback_parts.append(f"[T5] 욕설/비속어 포함: '{t5_output}' (감점 요소)")
 
         # 각 태스크 당 20점씩 부여 (총 5개 태스크)
         calculated_score = score_count * 20
         # 종합 피드백 생성
         combined_feedback = " | ".join(feedback_parts)
 
+        # --- 새로운 Boolean 필드들 계산 ---
+        # 오안내 여부: T4 멘트가 있으면 True (오안내), 없으면 False (정상)
+        is_misguidance = t4_contains_discourtesy # True면 오안내 있음
+        # 금지문구 여부: T4 멘트가 있으면 True (금지문구 있음), 없으면 False (금지문구 없음)
+        is_forbidden_phrases = t4_contains_discourtesy # T4와 동일하게 사용
+        # 불법추심 여부: T5 멘트가 있으면 True (불법추심 있음), 없으면 False (없음)
+        is_illegal_collection = t5_contains_swear
+
+        # 납부의사 여부: T2의 payment_willingness를 "높음"과 같은 기준으로 Boolean 변환
+        # 현재 T2 프롬프트는 willingness를 "높음/보통/낮음"으로 반환하므로, "높음"이면 True, 아니면 False로 변환
+        t2_willingness = task_results.get("T2", {}).get("willingness", "").strip()
+        is_willing_to_pay = (t2_willingness.lower() == "높음") # "높음"일 경우만 True로 판단
 
         # summary 딕셔너리 구성 (counsel_summary 테이블용)
-        # T2 프롬프트에서 emotion, willingness, guided_method, situation_type, auto_transfer, virtual_account
-        # 필드를 명시적으로 요구하지 않으므로, 이 값들은 Ollama가 반환하지 않을 것입니다.
-        # 따라서 파싱된 결과에서 이 필드들을 직접 추출하는 것은 불가능합니다.
-        # 여기서는 해당 필드에 대한 기본값 ("판단불가" 또는 False)을 유지합니다.
+        # T2의 결과에서 직접 'emotion', 'willingness', 'situation', 'guided_method' 필드를 가져옵니다.
+        # 해당 필드가 없으면 기본값인 "판단불가"를 사용합니다.
+        t2_result = task_results.get("T2", {}) # T2 결과를 가져옴
         summary = {
-            "counsel_id": str(counsel_id),
-            "script_followed": t1_success,
-            "customer_emotion": "판단불가", # T2 프롬프트는 emotion을 요구하지 않음
-            "payment_willingness": "판단불가", # T2 프롬프트는 willingness를 요구하지 않음
-            "situation_type": "판단불가", # T2 프롬프트는 situation을 요구하지 않음
-            "auto_transfer_guided": False, # T2 프롬프트에서 이런 정보 요구 안 하므로 고정값
-            "virtual_account_guided": False, # T2 프롬프트에서 이런 정보 요구 안 하므로 고정값
-            "payment_positive_response": t3_success,
-            "guided_method": "판단불가", # T2 프롬프트에서 정보 요구 안 함
-            "overall_score": float(calculated_score), # counsel_summary는 Float 컬럼
-            "summary_comment": combined_feedback
-        }
+                "counsel_id": str(counsel_id),
+                "script_followed": t1_success, # 기존 유지 (스크립트 준수 여부)
+                "customer_emotion": task_results.get("T2", {}).get("emotion", "판단불가"),
+                "payment_willingness": task_results.get("T2", {}).get("willingness", "판단불가"), # 원래 string 값 유지
+                "situation_type": task_results.get("T2", {}).get("situation", "판단불가"),
+                "auto_transfer_guided": False,
+                "virtual_account_guided": False,
+                "payment_positive_response": t3_success, # 기존 유지 (납부 긍정 응답 여부)
+                "guided_method": task_results.get("T2", {}).get("guided_method", "판단불가"),
+                "overall_score": float(calculated_score),
+                "summary_comment": combined_feedback,
+                # --- 새로운 필드 추가 ---
+                "is_misguidance": is_misguidance, # 오안내 여부
+                "is_forbidden_phrases": is_forbidden_phrases, # 금지문구 여부
+                "is_illegal_collection": is_illegal_collection, # 불법추심 여부
+                "is_willing_to_pay": is_willing_to_pay # 납부의사 여부
+                }
         print(f"[{datetime.now()}] [{counsel_id}] 요약 결과 생성: {summary}")
 
         # 요약 결과를 DB에 저장
@@ -311,7 +312,7 @@ def summarize_results(counsel_id):
             print(traceback.format_exc())
 
 
-def build_dashboard_view(counsel_id):
+def build_dashboard_view(counsel_id, counselor_name="미정"):
     """집계 결과를 기반으로 화면용 대시보드 뷰 테이블을 생성합니다."""
     with engine.begin() as conn:
         existing = conn.execute(
@@ -323,25 +324,31 @@ def build_dashboard_view(counsel_id):
             print(f"[{datetime.now()}] [{counsel_id}] 대시보드 이미 존재, 스킵.")
             return
 
-        row = conn.execute(
-            counsel_summary.select().where(counsel_summary.c.counsel_id == str(counsel_id))
-        ).fetchone()
-        if not row:
+        row_summary = conn.execute(
+        counsel_summary.select().where(counsel_summary.c.counsel_id == str(counsel_id))).fetchone()
+        if not row_summary:
             print(f"[{datetime.now()}] [{counsel_id}] 요약 데이터 없음. 대시보드 생성 불가.")
+            return
+        # --- consultations 테이블에서 정보 가져오기 ---
+        row_consultation = conn.execute(
+        consultations_java.select().where(consultations_java.c.id == int(counsel_id))).fetchone()
+        if not row_consultation:
+            print(f"[{datetime.now()}] [{counsel_id}] consultations 데이터 없음. 대시보드 생성 불가.")
             return
 
         # 대시보드 데이터 구성
         # counsel_summary에서 직접 값을 가져옵니다.
         dashboard = {
-            "datetime": datetime.now(timezone.utc),
-            "counselor": "미정", # 이 부분은 Java 백엔드에서 받아와야 할 정보입니다.
-            "counsel_id": str(counsel_id),
-            "미납안내_여부": row.script_followed,
-            "납부유도_여부": row.payment_positive_response,
-            "유도_방식": row.guided_method,
-            "고객_반응": row.customer_emotion,
-            "종합_판단": "성공" if row.payment_positive_response else "실패"
-        }
+                "datetime": row_consultation.consultation_date, # 상담일자 (consultations에서)
+                "customer_info": row_consultation.customer_info, # 고객번호 (consultations에서)
+                "counselor_id": row_consultation.counselor_id, # 상담사번호 (consultations에서)
+                "counsel_id": str(counsel_id), # Call번호 (counsel_summary와 동일한 ID)
+                "overall_score": row_summary.overall_score, # Score (counsel_summary에서)
+                "misguidance_status": row_summary.is_misguidance, # 오안내 (새로운 필드)
+                "forbidden_phrases_status": row_summary.is_forbidden_phrases, # 금지문구 (새로운 필드)
+                "illegal_collection_status": row_summary.is_illegal_collection, # 불법추심 (새로운 필드)
+                "payment_intention_status": row_summary.is_willing_to_pay # 납부의사 (새로운 필드)
+                }
 
         # 대시보드 뷰 DB에 저장
         conn.execute(counsel_dashboard_view.insert().values(**dashboard))
@@ -362,16 +369,17 @@ def analyze_consultation_api():
 
     counsel_id = data.get("counsel_id")
     raw_text = data.get("raw_text")
+    counselor_name = data.get("counselor_name", "미정")
 
     if not counsel_id or not raw_text:
         print(f"[{datetime.now()}] [API Call] Error: Missing counsel_id or raw_text.")
         return jsonify({"status": "error", "message": "counsel_id와 raw_text는 필수입니다."}), 400
 
-    print(f"[{datetime.now()}] [API Call] Starting analysis for counsel_id: {counsel_id}")
+    print(f"[{datetime.now()}] [API Call] Starting analysis for counsel_id: {counsel_id}, counselor: {counselor_name}")
     try:
-        analyze_dialogue_and_save(counsel_id, raw_text) # 이 함수가 모든 분석 및 저장 과정을 실행
-        summarize_results(counsel_id) # summarize_results와 build_dashboard_view는 analyze_dialogue_and_save 외부에서 호출해야 함
-        build_dashboard_view(counsel_id)
+        analyze_dialogue_and_save(counsel_id, raw_text)
+        summarize_results(counsel_id)
+        build_dashboard_view(counsel_id, counselor_name)
 
         print(f"[{datetime.now()}] [API Call] Analysis pipeline completed for counsel_id: {counsel_id}")
         return jsonify({"status": "success", "message": f"상담 ID {counsel_id} 분석 완료 및 DB 저장"}), 200

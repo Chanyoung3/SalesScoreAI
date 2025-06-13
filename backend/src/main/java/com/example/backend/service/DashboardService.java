@@ -27,8 +27,8 @@ public class DashboardService {
         return dashboardRepository.findDashboardViewByCounselId(counselId);
     }
 
-    // 특정 상담사 이름으로 대시보드 뷰 데이터를 조회하는 메서드
-    public List<DashboardViewResponse> getDashboardViewsByCounselorName(String counselorName) {
-        return dashboardRepository.findDashboardViewsByCounselorName(counselorName);
+    // 특정 상담사 ID에 해당하는 모든 대시보드 뷰 데이터를 조회하는 메서드입니다.
+    public List<DashboardViewResponse> getDashboardViewsByCounselorId(Long counselorId) {
+        return dashboardRepository.findDashboardViewsByCounselorId(counselorId);
     }
 }
