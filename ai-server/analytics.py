@@ -58,14 +58,15 @@ counsel_summary = Table(
 
 counsel_dashboard_view = Table(
     "counsel_dashboard_view", metadata,
-    Column("datetime", DateTime),
-    Column("counselor", String(50)),
-    Column("counsel_id", String(50), primary_key=True),
-    Column("미납안내_여부", Boolean),
-    Column("납부유도_여부", Boolean),
-    Column("유도_방식", String(50)),
-    Column("고객_반응", String(50)),
-    Column("종합_판단", String(50))
+    Column("datetime", DateTime),         # 상담일자
+    Column("customer_info", String(50)), # 고객번호
+    Column("counselor_id", Integer),      # 상담사번호
+    Column("counsel_id", String(50), primary_key=True), # Call번호
+    Column("overall_score", Float),       # Score
+    Column("misguidance_status", Boolean), # 오안내 여부
+    Column("forbidden_phrases_status", Boolean), # 금지문구 여부
+    Column("illegal_collection_status", Boolean), # 불법추심 여부
+    Column("payment_intention_status", Boolean) # 납부의사 여부
 )
 
 consultations_java = Table(
@@ -251,24 +252,41 @@ def summarize_results(counsel_id):
         # 종합 피드백 생성
         combined_feedback = " | ".join(feedback_parts)
 
+        # --- 새로운 Boolean 필드들 계산 ---
+        # 오안내 여부: T4 멘트가 있으면 True (오안내), 없으면 False (정상)
+        is_misguidance = t4_contains_discourtesy # True면 오안내 있음
+        # 금지문구 여부: T4 멘트가 있으면 True (금지문구 있음), 없으면 False (금지문구 없음)
+        is_forbidden_phrases = t4_contains_discourtesy # T4와 동일하게 사용
+        # 불법추심 여부: T5 멘트가 있으면 True (불법추심 있음), 없으면 False (없음)
+        is_illegal_collection = t5_contains_swear
+
+        # 납부의사 여부: T2의 payment_willingness를 "높음"과 같은 기준으로 Boolean 변환
+        # 현재 T2 프롬프트는 willingness를 "높음/보통/낮음"으로 반환하므로, "높음"이면 True, 아니면 False로 변환
+        t2_willingness = task_results.get("T2", {}).get("willingness", "").strip()
+        is_willing_to_pay = (t2_willingness.lower() == "높음") # "높음"일 경우만 True로 판단
 
         # summary 딕셔너리 구성 (counsel_summary 테이블용)
         # T2의 결과에서 직접 'emotion', 'willingness', 'situation', 'guided_method' 필드를 가져옵니다.
         # 해당 필드가 없으면 기본값인 "판단불가"를 사용합니다.
         t2_result = task_results.get("T2", {}) # T2 결과를 가져옴
         summary = {
-            "counsel_id": str(counsel_id),
-            "script_followed": t1_success,
-            "customer_emotion": t2_result.get("emotion", "판단불가"), # T2 결과에서 emotion 가져옴
-            "payment_willingness": t2_result.get("willingness", "판단불가"), # T2 결과에서 willingness 가져옴
-            "situation_type": t2_result.get("situation", "판단불가"), # T2 결과에서 situation 가져옴
-            "auto_transfer_guided": False,
-            "virtual_account_guided": False,
-            "payment_positive_response": t3_success,
-            "guided_method": t2_result.get("guided_method", "판단불가"), # T2 결과에서 guided_method 가져옴
-            "overall_score": float(calculated_score),
-            "summary_comment": combined_feedback
-        }
+                "counsel_id": str(counsel_id),
+                "script_followed": t1_success, # 기존 유지 (스크립트 준수 여부)
+                "customer_emotion": task_results.get("T2", {}).get("emotion", "판단불가"),
+                "payment_willingness": task_results.get("T2", {}).get("willingness", "판단불가"), # 원래 string 값 유지
+                "situation_type": task_results.get("T2", {}).get("situation", "판단불가"),
+                "auto_transfer_guided": False,
+                "virtual_account_guided": False,
+                "payment_positive_response": t3_success, # 기존 유지 (납부 긍정 응답 여부)
+                "guided_method": task_results.get("T2", {}).get("guided_method", "판단불가"),
+                "overall_score": float(calculated_score),
+                "summary_comment": combined_feedback,
+                # --- 새로운 필드 추가 ---
+                "is_misguidance": is_misguidance, # 오안내 여부
+                "is_forbidden_phrases": is_forbidden_phrases, # 금지문구 여부
+                "is_illegal_collection": is_illegal_collection, # 불법추심 여부
+                "is_willing_to_pay": is_willing_to_pay # 납부의사 여부
+                }
         print(f"[{datetime.now()}] [{counsel_id}] 요약 결과 생성: {summary}")
 
         # 요약 결과를 DB에 저장
@@ -306,25 +324,31 @@ def build_dashboard_view(counsel_id, counselor_name="미정"):
             print(f"[{datetime.now()}] [{counsel_id}] 대시보드 이미 존재, 스킵.")
             return
 
-        row = conn.execute(
-            counsel_summary.select().where(counsel_summary.c.counsel_id == str(counsel_id))
-        ).fetchone()
-        if not row:
+        row_summary = conn.execute(
+        counsel_summary.select().where(counsel_summary.c.counsel_id == str(counsel_id))).fetchone()
+        if not row_summary:
             print(f"[{datetime.now()}] [{counsel_id}] 요약 데이터 없음. 대시보드 생성 불가.")
+            return
+        # --- consultations 테이블에서 정보 가져오기 ---
+        row_consultation = conn.execute(
+        consultations_java.select().where(consultations_java.c.id == int(counsel_id))).fetchone()
+        if not row_consultation:
+            print(f"[{datetime.now()}] [{counsel_id}] consultations 데이터 없음. 대시보드 생성 불가.")
             return
 
         # 대시보드 데이터 구성
         # counsel_summary에서 직접 값을 가져옵니다.
         dashboard = {
-            "datetime": datetime.now(timezone.utc),
-            "counselor": counselor_name,
-            "counsel_id": str(counsel_id),
-            "미납안내_여부": row.script_followed,
-            "납부유도_여부": row.payment_positive_response,
-            "유도_방식": row.guided_method,
-            "고객_반응": row.customer_emotion,
-            "종합_판단": "성공" if row.payment_positive_response else "실패"
-        }
+                "datetime": row_consultation.consultation_date, # 상담일자 (consultations에서)
+                "customer_info": row_consultation.customer_info, # 고객번호 (consultations에서)
+                "counselor_id": row_consultation.counselor_id, # 상담사번호 (consultations에서)
+                "counsel_id": str(counsel_id), # Call번호 (counsel_summary와 동일한 ID)
+                "overall_score": row_summary.overall_score, # Score (counsel_summary에서)
+                "misguidance_status": row_summary.is_misguidance, # 오안내 (새로운 필드)
+                "forbidden_phrases_status": row_summary.is_forbidden_phrases, # 금지문구 (새로운 필드)
+                "illegal_collection_status": row_summary.is_illegal_collection, # 불법추심 (새로운 필드)
+                "payment_intention_status": row_summary.is_willing_to_pay # 납부의사 (새로운 필드)
+                }
 
         # 대시보드 뷰 DB에 저장
         conn.execute(counsel_dashboard_view.insert().values(**dashboard))

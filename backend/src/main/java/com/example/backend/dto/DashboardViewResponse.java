@@ -8,13 +8,13 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DashboardViewResponse {
-    // Python 테이블의 datetime 컬럼
-    private String datetime; // YYYY-MM-DD HH:MM:SS 형식 문자열
-    private String counselor;
-    private String counselId; // Python에서 String(50)으로 다루므로 String으로 받음 (Java의 Long ID와 매핑)
-    private Boolean overdueGuidanceStatus; // 미납 안내 여부
-    private Boolean paymentInducementStatus; // 납부 유도 여부
-    private String inducementMethod; // 유도 방식
-    private String customerResponse; // 고객 반응
-    private String overallJudgment; // 종합 판단
+    private String consultationDate;     // 상담일자 (datetime)
+    private String customerNumber;       // 고객번호 (customer_info)
+    private Long counselorNumber;        // 상담사번호 (counselor_id)
+    private String callNumber;           // Call번호 (counsel_id)
+    private Float score;                 // Score (overall_score)
+    private Boolean misguidance;          // 오안내 (misguidance_status)
+    private Boolean forbiddenPhrases;     // 금지문구 (forbidden_phrases_status)
+    private Boolean illegalCollection;    // 불법추심 (illegal_collection_status)
+    private Boolean paymentIntention;     // 납부의사 (payment_intention_status)
 }
