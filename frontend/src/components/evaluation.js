@@ -7,75 +7,78 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { addMonths } from "date-fns";
 import dayjs from 'dayjs';
 import ko from 'date-fns/locale/ko';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import '../App.css';
+import axios from 'axios';
 
 function Evaluation({ logOut }) {
   const [searchText, setSearchText] = useState("");
   const [startDate, setStartDate] = useState(new Date());;
+  const [scriptScoreData, setScriptScoreData] = useState([]);
+  const [issueCallData, setIssueCallData] = useState([]);
+  const [counselorScore1, setcounselorScore1] = useState(0);
+  const [allScore1, setallScore1] = useState(0);
+  const [counselorScore2, setcounselorScore2] = useState(0);
+  const [allScore2, setallScore2] = useState(0);
 
   const handleMonthChange = (offset) => {
     const newDate = addMonths(startDate, offset);
     setStartDate(newDate);
   };
 
-  const dashboardData = {
-    pieCharts: {
-      data1: [
-        { name: '대상자', value: 400 },
-        { name: '전체', value: 300 },
-      ],
-      data2: [
-        { name: '대상자', value: 400 },
-        { name: '전체', value: 300 },
-      ],
-      data3: [
-        { name: '대상자', value: 400 },
-        { name: '전체', value: 300 },
-      ],
-    },
-    tables: {
-      tdata1: [
-        { 항목: '첫인사', 대상자: 4, 전체: 4.25 },
-        { 항목: '본인확인', 대상자: 4.3, 전체: 4.38 },
-        { 항목: '필수안내', 대상자: 3.4, 전체: 3.92 },
-        { 항목: '끝인사', 대상자: 5, 전체: 4.44 },
-      ],
-      tdata2: [
-        { 항목: '불법추심', 대상자: 0.18, 전체: 0.12 },
-        { 항목: '금지문구', 대상자: 0.46, 전체: 0.30 },
-        { 항목: '민원성', 대상자: 0.37, 전체: 0.38 },
-      ]
-    }
-  };
-
-  // 파이차트 데이터
-  const data1 = dashboardData.pieCharts.data1;
-  const data2 = dashboardData.pieCharts.data2;
-  const data3 = dashboardData.pieCharts.data3;
-
-  // 테이블 데이터
-  const tdata1 = dashboardData.tables.tdata1;
-  const tdata2 = dashboardData.tables.tdata2;
-
-  /*
   useEffect(() => {
-    axios
-      .post(`${process.env.REACT_APP_API_URL}/evaluation`)
+    console.log("초기 searchText:", searchText);
+    const counselorId = searchText.trim();
+    const yearMonth = dayjs(startDate).format('YYYY-MM');
+    const params = new URLSearchParams();
+    if (counselorId) params.append("counselorId", counselorId);
+    params.append("yearMonth", yearMonth);
+
+    axios.get(`${process.env.REACT_APP_API_URL}/dashboard/statistics?${params.toString()}`)
       .then((res) => {
-        setData1(res.data.data1);
-        setData2(res.data.data2);
-        setData3(res.data.data3);
-        setData4(res.data.tdata1);
-        setData5(res.data.tdata2);
+        const data = res.data;
+        setScriptScoreData(data.scriptScores);
+        setIssueCallData(data.issueCalls);
+        setcounselorScore1(data.specificCounselorOverallAvgScore);
+        setallScore1(data.overallOverallAvgScore);
+        setcounselorScore2(data.specificCounselorLowScoreCallFrequency);
+        setallScore2(data.overallLowScoreCallFrequency);
       })
       .catch((err) => {
         console.error("통계 데이터 불러오기 실패", err);
       });
-  }, []);
-  */
+  }, [searchText, startDate]);
+
+  // 반올림 함수 (숫자 유지)
+  const round2 = (num) => (typeof num === 'number' ? Math.round(num * 100) / 100 : 0);
+
+  // 스크립트 점수 데이터 변환
+  // tdata1: 스크립트 점수 테이블 데이터
+  // tdata1, tdata2 각 항목 점수도 소수점 2자리 처리
+  const tdata1 = scriptScoreData.map(item => ({
+    항목: item.item,
+    대상자: round2(item.targetAvgMonthlyScore),
+    전체: round2(item.overallAvgMonthlyScore)
+  }));
+
+  const tdata2 = issueCallData.map(item => ({
+    항목: item.item,
+    대상자: round2(item.targetFrequency),
+    전체: round2(item.overallFrequency)
+  }));
+
+  // data2, data3 점수도 소수점 2자리까지만
+  const data2 = [
+    { name: '대상자', value: round2(counselorScore1) },
+    { name: '전체', value: round2(allScore1) }
+  ];
+
+  const data3 = [
+    { name: '대상자', value: round2(counselorScore2) },
+    { name: '전체', value: round2(allScore2) }
+  ];
 
   return (
     <>
@@ -122,47 +125,6 @@ function Evaluation({ logOut }) {
 
               <Box>
                 <Box display="flex" alignItems="flex-start" justifyContent="center" gap={2}>
-                  <Box display="flex" flexDirection="column" alignItems="center">
-                    <Typography variant="subtitle1" mb={1}>유효 콜 수</Typography>
-                    <BarChart
-                      width={300}
-                      height={200}
-                      data={data1}
-                      layout="vertical"
-                      margin={{ top: 20, right: 20, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="name" type="category" />
-                      <Tooltip />
-                      <Bar dataKey="value" barSize={20}>
-                        {data1.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={index === 0 ? '#C0504D' : '#4F81BD'}
-                          />
-                        ))}
-                        <LabelList
-                          dataKey="value"
-                          position="left"
-                          content={({ x, y, width, height, value, index }) => {
-                            return (
-                              <text
-                                x={x - 10}
-                                y={y + height / 2 + 4}
-                                fontSize={14}
-                                textAnchor="end"
-                              >
-                              </text>
-                            );
-                          }}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </Box>
-
-                  <Box width="1px" height="240px" bgcolor="black" mx={2} />
-
                   <Box display="flex" flexDirection="column" alignItems="center">
                     <Typography variant="subtitle1" mb={1}>스크립트 Score</Typography>
                     <BarChart
