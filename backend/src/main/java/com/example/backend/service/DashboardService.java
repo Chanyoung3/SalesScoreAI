@@ -40,7 +40,20 @@ public class DashboardService {
         List<ScriptScoreComparisonItem> scriptScores = dashboardRepository.getScriptScoreComparison(counselorId, yearMonth);
         List<IssueCallComparisonItem> issueCalls = dashboardRepository.getIssueCallComparison(counselorId, yearMonth);
 
-        return new DashboardStatisticsResponse(scriptScores, issueCalls);
+        // --- 새로운 4가지 통계 데이터 계산 및 추가 ---
+        Float specificCounselorOverallAvgScore = dashboardRepository.getAvgOverallScore(counselorId, yearMonth);
+        Float overallOverallAvgScore = dashboardRepository.getAvgOverallScore(null, yearMonth); // 전체 상담사 평균
+        Float specificCounselorLowScoreCallFrequency = dashboardRepository.getLowScoreCallFrequency(counselorId, yearMonth);
+        Float overallLowScoreCallFrequency = dashboardRepository.getLowScoreCallFrequency(null, yearMonth); // 전체 상담사 50점 미만 빈도
+
+        DashboardStatisticsResponse response = new DashboardStatisticsResponse(scriptScores,
+                issueCalls,
+                specificCounselorOverallAvgScore,
+                overallOverallAvgScore,
+                specificCounselorLowScoreCallFrequency,
+                overallLowScoreCallFrequency);
+
+        return response;
     }
 
     // 전체 상담사에 대한 대시보드 통계 데이터를 조회합니다.

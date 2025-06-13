@@ -33,12 +33,12 @@ public class DashboardController {
     public ResponseEntity<?> getDashboardDataByCounselId(@PathVariable String counselId) {
         Optional<DashboardViewResponse> data = dashboardService.getDashboardViewByCounselId(counselId);
         return data.map(ResponseEntity::ok)
-                   .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
     }
 
     // 특정 상담사 ID에 해당하는 모든 대시보드 뷰 데이터를 조회하는 API 엔드포인트입니다.
     @GetMapping("/counselor_id/{counselorId}")
-    public ResponseEntity<List<DashboardViewResponse>> getDashboardDataByCounselorId(@PathVariable Long counselorId) { // <-- 파라미터 Long 타입으로 변경
+    public ResponseEntity<List<DashboardViewResponse>> getDashboardDataByCounselorId(@PathVariable Long counselorId) {
         List<DashboardViewResponse> data = dashboardService.getDashboardViewsByCounselorId(counselorId);
         return ResponseEntity.ok(data);
     }
