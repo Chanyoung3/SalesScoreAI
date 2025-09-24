@@ -61,8 +61,6 @@ LLM(Large Language Model)을 활용한 상담 평가 시스템
 
 ## 📸 실행 화면
 
----
-
 ### 🚀 **V1: 초기 버전**
 <p align="center">
   <img src="https://github.com/user-attachments/assets/0f6c60c5-adf5-4ce4-b3b3-704b2bc758e1" width="500" /><br>
