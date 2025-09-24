@@ -118,28 +118,32 @@ LLM(Large Language Model)을 활용한 상담 평가 시스템
       <a href="https://github.com/Chanyoung3">
         <img src="https://github.com/Chanyoung3.png" width="100" style="border-radius:10px;"><br/>
         <sub><b>Chanyoung3</b></sub><br/>
-        <sub>팀장</sub>
+        <sub>팀장</sub><br />
+        <sub>프론트엔드 전반</sub>
       </a>
     </td>
     <td align="center">
       <a href="https://github.com/choi2y">
         <img src="https://github.com/choi2y.png" width="100" style="border-radius:10px;"><br/>
         <sub><b>choi2y</b></sub><br/>
-        <sub>팀원</sub>
+        <sub>팀원</sub><br />
+        <sub>백엔드 전반</sub>
       </a>
     </td>
     <td align="center">
       <a href="https://github.com/HenryPark62">
         <img src="https://github.com/HenryPark62.png" width="100" style="border-radius:10px;"><br/>
         <sub><b>HenryPark62</b></sub><br/>
-        <sub>팀원</sub>
+        <sub>팀원</sub><br />
+        <sub> LLM 연동 및 프롬프트 엔지니어링</sub>
       </a>
     </td>
     <td align="center">
       <a href="https://github.com/LEESEONWOOOO">
         <img src="https://github.com/LEESEONWOOOO.png" width="100" style="border-radius:10px;"><br/>
         <sub><b>LEESEONWOOOO</b></sub><br/>
-        <sub>팀원</sub>
+        <sub>팀원</sub><br />
+        <sub>UI / 프론트엔드</sub>
       </a>
     </td>
   </tr>
